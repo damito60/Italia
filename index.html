@@ -1873,9 +1873,9 @@ function renderStaffette(){
   const sg=weekData&&weekData.sprint_relay_gender;
   if(sg){
     const lbl=sg==='M'?'🔵 Maschile':'🔴 Femminile';
-    h+=`<div style="font-size:11px;color:var(--text3);margin-bottom:10px">💡 A parità di punteggio equipaggiamento, l'ordine tra i pari-merito su 100m/400m usa il PB ${lbl} come tie-break.</div>`;
+    h+=`<div style="grid-column:1/-1;font-size:11px;color:var(--text3);margin-bottom:10px">💡 A parità di punteggio equipaggiamento, l'ordine tra i pari-merito su 100m/400m usa il PB ${lbl} come tie-break.</div>`;
   }else{
-    h+=`<div style="font-size:11px;color:var(--red);margin-bottom:10px">⚠️ Genere sprint non impostato per questa settimana: a parità di punteggio equipaggiamento l'ordine tra i pari-merito su 100m/400m non è determinato.</div>`;
+    h+=`<div style="grid-column:1/-1;font-size:11px;color:var(--red);margin-bottom:10px">⚠️ Genere sprint non impostato per questa settimana: a parità di punteggio equipaggiamento l'ordine tra i pari-merito su 100m/400m non è determinato.</div>`;
   }
   for(const disc of['100m','400m']){
     const squads=getSquads(disc);
