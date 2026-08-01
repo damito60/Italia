@@ -383,6 +383,15 @@ select{font-size:16px}
             <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Data inizio</label>
             <input type="date" id="newweek-date" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
           </div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Genere sprint (100m/400m) questa settimana</label>
+            <select id="newweek-sprint-gender" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+              <option value="">— Seleziona —</option>
+              <option value="M">Maschile</option>
+              <option value="F">Femminile</option>
+            </select>
+            <span style="font-size:11px;color:var(--text3);display:block;margin-top:4px">Serve solo per il tie-break PB nelle staffette 100m/400m in caso di parità di punteggio equipaggiamento.</span>
+          </div>
           <div class="alert a-warn" style="font-size:12px;line-height:1.5;margin-bottom:14px">
             ⚠️ <strong>Questa operazione:</strong>
             <ul style="margin:6px 0 0 18px;padding:0">
@@ -395,7 +404,7 @@ select{font-size:16px}
           </div>
           <div>
             <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">Scrivi <strong>CONFERMA</strong> per procedere</label>
-            <input type="text" id="newweek-confirm-text" placeholder="CONFERMA" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px" oninput="document.getElementById('newweek-confirm-btn').disabled = this.value.trim()!=='CONFERMA'">
+            <input type="text" id="newweek-confirm-text" placeholder="CONFERMA" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px" oninput="document.getElementById('newweek-confirm-btn').disabled = this.value.trim()!=='CONFERMA' || document.getElementById('newweek-sprint-gender').value===''">
           </div>
         </div>
         <div class="guide-modal-foot">
@@ -531,7 +540,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // Versione build — aggiorna a mano questa riga ogni volta che carichi un nuovo index.html,
 // così in fondo alla pagina di login vedi subito se è online la versione giusta.
-const APP_VERSION='v1.7 — 27 lug 2026 (gestione roster: entrata/uscita membri)';
+const APP_VERSION='v1.8 — 1 ago 2026 (tie-break PB su staffette 100m/400m)';
 
 const DISCS=['100m','200m','400m','800m','1500m','5000m','10000m','Marathon','110H','400H','3000S','LJ','TJ','HJ','PV','SP','DT','HT','JT'];
 const DL={'100m':'100m','200m':'200m','400m':'400m','800m':'800m','1500m':'1500m','5000m':'5000m','10000m':'10000m','Marathon':'Maratona / Marathon','110H':'110H / 100H','400H':'400H','3000S':'3000S','LJ':'Lungo / LJ','TJ':'Triplo / TJ','HJ':'Alto / HJ','PV':'Asta / PV','SP':'Peso / SP','DT':'Disco / DT','HT':'Martello / HT','JT':'Giavellotto / JT'};
@@ -770,6 +779,7 @@ function openNewWeekModal() {
   document.getElementById('newweek-label').value = '';
   document.getElementById('newweek-league').value = weekData ? (weekData.league || '') : '';
   document.getElementById('newweek-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('newweek-sprint-gender').value = '';
   document.getElementById('newweek-confirm-text').value = '';
   document.getElementById('newweek-confirm-btn').disabled = true;
   document.getElementById('newweek-modal-overlay').style.display='flex';
@@ -783,12 +793,14 @@ async function confirmNewWeek() {
   const label = document.getElementById('newweek-label').value.trim();
   const league = document.getElementById('newweek-league').value.trim();
   const dateStart = document.getElementById('newweek-date').value;
+  const sprintGender = document.getElementById('newweek-sprint-gender').value;
   const confirmText = document.getElementById('newweek-confirm-text').value.trim();
 
   if (confirmText !== 'CONFERMA') return; // sicurezza extra, il bottone è già disabled
   if (!label) { alert('Inserisci un\'etichetta per la nuova settimana.'); return; }
   if (!league) { alert('Inserisci la lega attuale.'); return; }
   if (!dateStart) { alert('Inserisci una data di inizio.'); return; }
+  if (!sprintGender) { alert('Seleziona il genere sprint (100m/400m) di questa settimana.'); return; }
 
   const btn = document.getElementById('newweek-confirm-btn');
   btn.disabled = true;
@@ -807,7 +819,7 @@ async function confirmNewWeek() {
       method:'POST',
       body:JSON.stringify({
         label, date_start: dateStart, active: true,
-        league
+        league, sprint_relay_gender: sprintGender
       }),
       prefer:'return=representation'
     });
@@ -1770,9 +1782,30 @@ function loadOverrideFromStorage(){
   }catch(e){staffOverride={};}
 }
 
+function pbTieBreakCol(disc){
+  // Solo 100m/400m usano il PB come tie-break, e solo se la settimana ha un genere sprint impostato
+  if(disc!=='100m'&&disc!=='400m') return null;
+  const g=weekData&&weekData.sprint_relay_gender;
+  return g ? PB_COL[g][disc] : null;
+}
+function pbOf(playerId,pbCol){
+  if(!pbCol) return null;
+  const draft=pbDrafts[playerId];
+  if(!draft) return null;
+  const v=parseFloat(draft[pbCol]);
+  return isNaN(v)||v<=0 ? null : v;
+}
+function cmpScoreThenPB(a,b){
+  if(b.r!==a.r) return b.r-a.r;         // 1° criterio: punteggio CC (equip+coach)
+  if(a.pb==null&&b.pb==null) return 0;
+  if(a.pb==null) return 1;               // chi non ha PB va dopo chi ce l'ha
+  if(b.pb==null) return -1;
+  return a.pb-b.pb;                      // 2° criterio: tempo più basso vince
+}
 function buildSquads(disc,mode){
   const players=allPlayers.filter(p=>p.active!==false);
-  const ranked=players.map(p=>({p:p.id,r:getScore(p.id,disc)||0})).filter(x=>x.r>0).sort((a,b)=>b.r-a.r);
+  const pbCol=pbTieBreakCol(disc);
+  const ranked=players.map(p=>({p:p.id,r:getScore(p.id,disc)||0,pb:pbOf(p.id,pbCol)})).filter(x=>x.r>0).sort(cmpScoreThenPB);
   const squads={A:[],B:[],C:[],D:ranked.slice(12,16).map(x=>x.p)};
   const pool=ranked.slice(0,12);
   if(mode==='ranking'){
@@ -1802,7 +1835,8 @@ function buildSquads(disc,mode){
 // Serve solo per confronto "what-if", non viene mai usata per le griglie reali.
 function buildSquadsCorretto(disc,mode,k=K_COACH){
   const players=allPlayers.filter(p=>p.active!==false);
-  const ranked=players.map(p=>({p:p.id,r:getScoreCorretto(p.id,disc,k)||0})).filter(x=>x.r>0).sort((a,b)=>b.r-a.r);
+  const pbCol=pbTieBreakCol(disc);
+  const ranked=players.map(p=>({p:p.id,r:getScoreCorretto(p.id,disc,k)||0,pb:pbOf(p.id,pbCol)})).filter(x=>x.r>0).sort(cmpScoreThenPB);
   const squads={A:[],B:[],C:[],D:ranked.slice(12,16).map(x=>x.p)};
   const pool=ranked.slice(0,12);
   if(mode==='ranking'){
@@ -1836,6 +1870,13 @@ function squadOf(squads){
 
 function renderStaffette(){
   let h='';
+  const sg=weekData&&weekData.sprint_relay_gender;
+  if(sg){
+    const lbl=sg==='M'?'🔵 Maschile':'🔴 Femminile';
+    h+=`<div style="font-size:11px;color:var(--text3);margin-bottom:10px">💡 A parità di punteggio equipaggiamento, l'ordine tra i pari-merito su 100m/400m usa il PB ${lbl} come tie-break.</div>`;
+  }else{
+    h+=`<div style="font-size:11px;color:var(--red);margin-bottom:10px">⚠️ Genere sprint non impostato per questa settimana: a parità di punteggio equipaggiamento l'ordine tra i pari-merito su 100m/400m non è determinato.</div>`;
+  }
   for(const disc of['100m','400m']){
     const squads=getSquads(disc);
     const editMode=!!staffEditMode[disc];
