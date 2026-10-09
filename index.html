@@ -333,6 +333,7 @@ select{font-size:16px}
       <button class="tab" data-tabkey="trofei" onclick="showTab('trofei')">🏆 Trofei</button>
       <button class="tab" data-tabkey="scambi" onclick="showTab('scambi')">🔄 Scambi</button>
       <button class="tab" data-tabkey="roster" onclick="showTab('roster')" id="tab-btn-roster" style="display:none">👥 Roster</button>
+      <button class="tab" data-tabkey="dctracker" id="tab-btn-dctracker" onclick="window.open('https://sergiocosi.github.io/dctracker/','_blank')" style="display:none;background:var(--goldlt);color:var(--gold)">📊 DC Tracker ↗</button>
       <button class="tab" data-tabkey="guida" onclick="showTab('guida')">❓ Guida</button>
     </div>
 
@@ -572,7 +573,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // Versione build — aggiorna a mano questa riga ogni volta che carichi un nuovo index.html,
 // così in fondo alla pagina di login vedi subito se è online la versione giusta.
-const APP_VERSION='v1.21 — 29 set 2026 (Staffette: nuovo filtro "Base di calcolo" — griglie composte solo sui PB 100m/400m del genere sprint della settimana)';
+const APP_VERSION='v1.22 — 9 ott 2026 (Fusione Italy Team → Italia: fix messaggio "Salvato"/snapshot in Trofei, testo WhatsApp Scambi, link DC Tracker opzionale)';
 
 const DISCS=['100m','200m','400m','800m','1500m','5000m','10000m','Marathon','110H','400H','3000S','LJ','TJ','HJ','PV','SP','DT','HT','JT'];
 const DL={'100m':'100m','200m':'200m','400m':'400m','800m':'800m','1500m':'1500m','5000m':'5000m','10000m':'10000m','Marathon':'Maratona / Marathon','110H':'110H / 100H','400H':'400H','3000S':'3000S','LJ':'Lungo / LJ','TJ':'Triplo / TJ','HJ':'Alto / HJ','PV':'Asta / PV','SP':'Peso / SP','DT':'Disco / DT','HT':'Martello / HT','JT':'Giavellotto / JT'};
@@ -591,6 +592,7 @@ function toggleLang(){lang=LANG_CYCLE[lang]||'it';const btn=document.getElementB
 function refreshAllUI(){
   document.querySelectorAll('.tab').forEach(el=>{
     const key=el.dataset.tabkey;
+    if(key==='dctracker') return; // testo fisso, non tradotto
     const i18nKeyMap={giorno:'tab_giorno',messaggio:'tab_msg',staffette:'tab_staff',ranking:'tab_rank',inserisci:'tab_insert',inventario:'tab_inventario',trofei:'tab_trofei',scambi:'tab_scambi',guida:'tab_guide'};
     const i18nKey=i18nKeyMap[key];
     if(i18nKey) el.textContent=t(i18nKey);
@@ -735,6 +737,7 @@ async function loginSuccess() {
   else document.getElementById('user-msg-bar').style.display='block';
   if (isAdmin) document.getElementById('admin-week-bar').style.display='block';
   if (isAdmin) document.getElementById('tab-btn-roster').style.display='';
+  if (SHOW_DC_TRACKER) document.getElementById('tab-btn-dctracker').style.display='';
 
   // Carica sempre la lista giocatori (serve per dropdown admin e per i dati)
   // Lo facciamo qui e non solo in init() perché al refresh il blocco login viene saltato
@@ -999,6 +1002,8 @@ function rPill(p,d){const r=getRank(p,d);return `<span class="rp ${rClass(r)}">$
 // note a piè pagina) senza toccare le funzioni sottostanti — per ora fa solo
 // confusione. Rimetterlo a true quando si deciderà come evidenziarlo meglio.
 const SHOW_SCORE_CORRETTO = false;
+// Link esterno al DC Coach Tracker nella barra dei tab: metti true per mostrarlo.
+const SHOW_DC_TRACKER = false;
 const K_COACH = 2;
 
 function getScoreCorretto(playerId, disc, k=K_COACH) {
@@ -2963,7 +2968,6 @@ async function renderTrofei(){
 // ── SAVE PBs (player self-update) ────────────────────────────────
 async function savePBs(){
   const targetPlayer=isAdmin&&adminActingAs?adminActingAs:currentUser.id;
-  const msg=document.getElementById('pb-save-msg');
   const existing=pbDrafts[targetPlayer]||{};
   const data={...existing, player_id:targetPlayer, updated_at:new Date().toISOString()};
 
@@ -2988,9 +2992,9 @@ async function savePBs(){
       prefer:'resolution=merge-duplicates,return=representation'
     });
     pbDrafts[targetPlayer]={...existing,...data};
-    msg.style.display='inline';
-    setTimeout(()=>msg.style.display='none',3000);
-    renderTrofei();
+    await renderTrofei(); // ridisegna PRIMA: il messaggio va mostrato sull'elemento nuovo, non su quello appena sostituito
+    const msg2=document.getElementById('pb-save-msg');
+    if(msg2){ msg2.style.display='inline'; setTimeout(()=>msg2.style.display='none',3000); }
   }catch(e){ alert(t('error_save')+': '+e.message); }
 }
 
@@ -3058,15 +3062,19 @@ async function publishSnapshot(){
     }catch(e){ console.error('Snapshot error for '+p.id, e); errors++; }
   }
 
-  if(errors===0){
-    msg.style.color='var(--green)';
-    msg.textContent=`✓ ${L('Snapshot pubblicato per','Snapshot published for','Instantané publié pour')} ${saved} ${L('giocatori','players','joueurs')}`;
-  } else {
-    msg.style.color='var(--red)';
-    msg.textContent=`${saved} OK, ${errors} ${L('errori','errors','erreurs')}`;
+  await renderTrofei(); // ridisegna PRIMA, poi esito sull'elemento nuovo
+  const msg2=document.getElementById('snapshot-msg');
+  if(msg2){
+    msg2.style.display='inline';
+    if(errors===0){
+      msg2.style.color='var(--green)';
+      msg2.textContent=`✓ ${L('Snapshot pubblicato per','Snapshot published for','Instantané publié pour')} ${saved} ${L('giocatori','players','joueurs')}`;
+    } else {
+      msg2.style.color='var(--red)';
+      msg2.textContent=`${saved} OK, ${errors} ${L('errori','errors','erreurs')}`;
+    }
+    setTimeout(()=>{msg2.style.display='none';},5000);
   }
-  setTimeout(()=>{msg.style.display='none';},5000);
-  renderTrofei();
 }
 
 // ── LOGO ─────────────────────────────────────────────────────
@@ -4217,9 +4225,9 @@ function buildScambiHTML() {
       const tuVerboFr = c.tipo==='offro' ? 'as' : 'cherches';
       const ioFraseFr = mia.tipo==='offro' ? 'je l\'ai' : 'je le cherche aussi';
       const waText = L(
-        `Ciao ${nomeAltro}! Ho visto su Italy Team che ${tuVerboIt} ${scambiLabel(c)} — ${ioFraseIt}. Ti va di fare uno scambio?`,
-        `Hi ${nomeAltro}! I saw on Italy Team that you ${tuVerboEn} ${scambiLabel(c)} — ${ioFraseEn}. Want to trade?`,
-        `Salut ${nomeAltro} ! J'ai vu sur Italy Team que tu ${tuVerboFr} ${scambiLabel(c)} — ${ioFraseFr}. Ça te dit un échange ?`
+        `Ciao ${nomeAltro}! Ho visto su Italia che ${tuVerboIt} ${scambiLabel(c)} — ${ioFraseIt}. Ti va di fare uno scambio?`,
+        `Hi ${nomeAltro}! I saw on Italia that you ${tuVerboEn} ${scambiLabel(c)} — ${ioFraseEn}. Want to trade?`,
+        `Salut ${nomeAltro} ! J'ai vu sur Italia que tu ${tuVerboFr} ${scambiLabel(c)} — ${ioFraseFr}. Ça te dit un échange ?`
       );
       const link = waLink(numero, waText);
       h += `<div class="scambi-match-card">
