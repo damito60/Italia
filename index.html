@@ -333,7 +333,7 @@ select{font-size:16px}
       <button class="tab" data-tabkey="trofei" onclick="showTab('trofei')">🏆 Trofei</button>
       <button class="tab" data-tabkey="scambi" onclick="showTab('scambi')">🔄 Scambi</button>
       <button class="tab" data-tabkey="roster" onclick="showTab('roster')" id="tab-btn-roster" style="display:none">👥 Roster</button>
-      <button class="tab" data-tabkey="dctracker" id="tab-btn-dctracker" onclick="window.open('https://sergiocosi.github.io/dctracker/','_blank')" style="display:none;background:var(--goldlt);color:var(--gold)">📊 DC Tracker ↗</button>
+      <button class="tab" data-tabkey="dctracker" id="tab-btn-dctracker" onclick="window.open('tracker.html','_blank')" style="display:none;background:var(--goldlt);color:var(--gold)">📊 DC Tracker ↗</button>
       <button class="tab" data-tabkey="guida" onclick="showTab('guida')">❓ Guida</button>
     </div>
 
@@ -356,6 +356,10 @@ select{font-size:16px}
         <div class="card">
           <div class="card-title">✅ Controllo obbligatorie settimana</div>
           <div id="obl-check"><div class="loading"><span class="spinner"></span>Caricamento...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">✅ Controllo Valore CC settimana</div>
+          <div id="gear-check"><div class="loading"><span class="spinner"></span>Caricamento...</div></div>
         </div>
       </div>
       <div id="admin-calcola-bar" style="display:none;margin-bottom:20px">
@@ -573,7 +577,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // Versione build — aggiorna a mano questa riga ogni volta che carichi un nuovo index.html,
 // così in fondo alla pagina di login vedi subito se è online la versione giusta.
-const APP_VERSION='v1.22 — 9 ott 2026 (Fusione Italy Team → Italia: fix messaggio "Salvato"/snapshot in Trofei, testo WhatsApp Scambi, link DC Tracker opzionale)';
+const APP_VERSION='v1.23 — 12 ott 2026 (Controllo Valore CC settimanale con lista mancanti da copiare, DC Tracker integrato nel sito di Italia)';
 
 const DISCS=['100m','200m','400m','800m','1500m','5000m','10000m','Marathon','110H','400H','3000S','LJ','TJ','HJ','PV','SP','DT','HT','JT'];
 const DL={'100m':'100m','200m':'200m','400m':'400m','800m':'800m','1500m':'1500m','5000m':'5000m','10000m':'10000m','Marathon':'Maratona / Marathon','110H':'110H / 100H','400H':'400H','3000S':'3000S','LJ':'Lungo / LJ','TJ':'Triplo / TJ','HJ':'Alto / HJ','PV':'Asta / PV','SP':'Peso / SP','DT':'Disco / DT','HT':'Martello / HT','JT':'Giavellotto / JT'};
@@ -607,7 +611,7 @@ function refreshAllUI(){
   const roh=document.getElementById('rank-overview-hint'); if(roh)roh.textContent=t('rank_overview_hint');
   const rmd=document.getElementById('rank-mode-disc-btn'); if(rmd)rmd.textContent=t('rank_toggle_disc');
   const rmo=document.getElementById('rank-mode-overview-btn'); if(rmo)rmo.textContent=t('rank_toggle_overview');
-  renderOblSummary();renderOblCheck();renderInsertTab();
+  renderOblSummary();renderOblCheck();renderGearCheck();renderInsertTab();
   if(document.getElementById('tab-messaggio').style.display!=='none')renderMessaggioTab();
   if(document.getElementById('tab-staffette').style.display!=='none')renderStaffette();
   if(document.getElementById('tab-ranking').style.display!=='none'){ if(rankingMode==='overview') renderRankingOverview(); else renderRankingTable(); }
@@ -754,6 +758,7 @@ async function loginSuccess() {
   await loadCardsData();
   renderOblSummary();
   renderOblCheck();
+  renderGearCheck();
   renderInsertTab();
   populateDiscSelect();
   await checkShowGuideModal();
@@ -1003,7 +1008,7 @@ function rPill(p,d){const r=getRank(p,d);return `<span class="rp ${rClass(r)}">$
 // confusione. Rimetterlo a true quando si deciderà come evidenziarlo meglio.
 const SHOW_SCORE_CORRETTO = false;
 // Link esterno al DC Coach Tracker nella barra dei tab: metti true per mostrarlo.
-const SHOW_DC_TRACKER = false;
+const SHOW_DC_TRACKER = true;
 const K_COACH = 2;
 
 function getScoreCorretto(playerId, disc, k=K_COACH) {
@@ -1417,6 +1422,55 @@ function renderOblCheck(){
   }
 
   document.getElementById('obl-check').innerHTML=h;
+}
+
+// ── GEAR CHECK: chi ha comunicato il Valore CC (attrezzatura) della settimana ─
+// La riga di italy_rankings esiste per tutti da subito (confirmNewWeek la crea
+// con il solo Allenatore), quindi "comunicato" = almeno un valore gear_* > 0.
+// Parziale = alcune discipline compilate ma non tutte e 19.
+let gearReminderText='';
+function renderGearCheck(){
+  const el=document.getElementById('gear-check');
+  if(!el || !isAdmin) return;
+  if(!weekData){ el.innerHTML=`<div class="alert a-warn" style="margin-bottom:0">${t('no_week')}</div>`; return; }
+
+  const players=allPlayers.filter(p=>p.active!==false);
+  const missing=[], partial=[], complete=[];
+  players.forEach(p=>{
+    const r=rankings[p.id]||{};
+    const filled=DISCS.filter(d=>(r[DISC_TO_GEAR_COL[d]]||0)>0).length;
+    if(filled===0) missing.push(p.id);
+    else if(filled<DISCS.length) partial.push({id:p.id,filled});
+    else complete.push(p.id);
+  });
+
+  let h='';
+  if(!missing.length && !partial.length){
+    h+=`<div class="alert a-success" style="margin-bottom:0">✅ Tutti i ${players.length} giocatori hanno inserito il Valore CC per tutte le ${DISCS.length} discipline.</div>`;
+    gearReminderText='';
+  }else{
+    h+=`<div class="alert a-warn" style="margin-bottom:12px">⚠️ <strong>${missing.length}</strong> su ${players.length} senza Valore CC`+
+       (partial.length?` · <strong>${partial.length}</strong> con dati parziali`:'')+`.</div>`;
+    h+=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">`;
+    h+=missing.map(id=>`<span class="obl-chip" style="border-color:var(--red)"><span>${id}</span><span class="badge b-err" style="font-size:9px">0/${DISCS.length}</span></span>`).join('');
+    h+=partial.map(x=>`<span class="obl-chip" style="border-color:var(--orange)"><span>${x.id}</span><span class="badge b-warn" style="font-size:9px">${x.filled}/${DISCS.length}</span></span>`).join('');
+    h+=`</div>`;
+
+    const lines=[
+      ...missing.map(id=>`- ${id}`),
+      ...partial.map(x=>`- ${x.id} (${x.filled}/${DISCS.length})`)
+    ].join('\n');
+    gearReminderText=`⚠️ *Valore CC mancante questa settimana / CC Value missing this week:*\n${lines}\n\nInseritelo nel tab "Dati CC" → Valore CC per disciplina 🙏\nPlease enter it in the "CC Data" tab → CC Value by event 🙏`;
+    h+=`<button class="btn-copy" onclick="copyGearReminder()">📋 Copia lista mancanti</button>`;
+  }
+  if(complete.length){
+    h+=`<p style="font-size:11px;color:var(--text3);margin-top:10px">✅ Completi: ${complete.join(', ')}</p>`;
+  }
+  el.innerHTML=h;
+}
+function copyGearReminder(){
+  if(!gearReminderText) return;
+  navigator.clipboard.writeText(gearReminderText).then(()=>alert('Lista copiata!'));
 }
 
 // ── OPTIMIZATION ─────────────────────────────────────────────
@@ -2474,6 +2528,7 @@ async function saveRanking(){
     rankings[targetPlayer]={...existing,...data};
     msg.style.display='inline';
     setTimeout(()=>msg.style.display='none',3000);
+    renderGearCheck();
   }catch(e){
     alert('Errore nel salvataggio: '+e.message);
   }
