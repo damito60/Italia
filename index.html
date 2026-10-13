@@ -577,7 +577,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // Versione build — aggiorna a mano questa riga ogni volta che carichi un nuovo index.html,
 // così in fondo alla pagina di login vedi subito se è online la versione giusta.
-const APP_VERSION='v1.23 — 12 ott 2026 (Controllo Valore CC settimanale con lista mancanti da copiare, DC Tracker integrato nel sito di Italia)';
+const APP_VERSION='v1.24 — 13 ott 2026 (Messaggio: "Libere per gli altri" riscritto — sempre 1ª/2ª scelta, Evitare solo le discipline affollate; controllo Valore CC; DC Tracker integrato)';
 
 const DISCS=['100m','200m','400m','800m','1500m','5000m','10000m','Marathon','110H','400H','3000S','LJ','TJ','HJ','PV','SP','DT','HT','JT'];
 const DL={'100m':'100m','200m':'200m','400m':'400m','800m':'800m','1500m':'1500m','5000m':'5000m','10000m':'10000m','Marathon':'Maratona / Marathon','110H':'110H / 100H','400H':'400H','3000S':'3000S','LJ':'Lungo / LJ','TJ':'Triplo / TJ','HJ':'Alto / HJ','PV':'Asta / PV','SP':'Peso / SP','DT':'Disco / DT','HT':'Martello / HT','JT':'Giavellotto / JT'};
@@ -1652,23 +1652,35 @@ function calcola(){
 }
 
 function buildAltriGuidance(obl,libere,precisiIds,players){
-  const altri=players.filter(p=>!precisiIds.has(p.id)&&(obl[p.id]||[]).length>0);
-  const oblCount={};DISCS.forEach(d=>oblCount[d]=0);
-  for(const p of players) for(const d of(obl[p.id]||[])) oblCount[d]=(oblCount[d]||0)+1;
-  const topCount={};DISCS.forEach(d=>topCount[d]=oblCount[d]||0);
-  for(const p of players) if(precisiIds.has(p.id)) for(const d of(libere[p.id]||[])) topCount[d]=(topCount[d]||0)+1;
-  const pref1=[],pref2=[],avoid=[];
-  for(const d of DISCS){
-    const oblP=players.filter(p=>(obl[p.id]||[]).includes(d));
-    const altriEl=altri.filter(p=>!(obl[p.id]||[]).includes(d));
-    const bestR=altriEl.length?Math.min(...altriEl.map(p=>getRank(p.id,d)||99)):99;
-    const weakObl=oblP.filter(p=>(getRank(p.id,d)||99)>12).length;
-    const room=Math.max(0,3-oblCount[d])+weakObl;
-    if(topCount[d]>=5||bestR>20) avoid.push(d);
-    else if(room>=2&&bestR<=14) pref1.push(d);
-    else if(room>=1&&bestR<=17) pref2.push(d);
-    else avoid.push(d);
+  // Indicazioni di gruppo per chi non ha libere precise.
+  // Il gioco conta solo i migliori 3 per disciplina: il riferimento è quindi il
+  // 3° iscritto (obbligatorie + tutte le libere già assegnate). Più quel 3° è
+  // debole e più "gli altri" ci si avvicinano, più la disciplina è sensata.
+  // Si evitano solo le discipline già affollate (≥5 iscritti): lì un altro
+  // iscritto non serve né come punti né come riserva.
+  const playing=players.filter(p=>(obl[p.id]||[]).length>0);
+  let altri=playing.filter(p=>!precisiIds.has(p.id));
+  if(!altri.length) altri=playing; // fallback: indicazioni valide per chiunque resti senza assegnazione
+  const entr={};DISCS.forEach(d=>entr[d]=[]);
+  for(const p of players){
+    const ds=[...(obl[p.id]||[]),...(libere[p.id]||[])];
+    for(const d of ds) entr[d].push(getRank(p.id,d)||99);
   }
+  const AFFOLLATA=5;
+  const cand=[],avoid=[];
+  for(const d of DISCS){
+    const n=entr[d].length;
+    if(n>=AFFOLLATA){avoid.push(d);continue;}
+    const el=altri.filter(p=>!(obl[p.id]||[]).includes(d));
+    if(!el.length) continue;
+    const third=n>=3?[...entr[d]].sort((a,b)=>a-b)[2]:99; // posto libero tra i 3 = punti sicuri
+    const gaps=el.map(p=>(getRank(p.id,d)||30)-third).sort((a,b)=>a-b);
+    const med=gaps[Math.floor((gaps.length-1)/2)];
+    cand.push({d,score:med+(n>=4?2:0),n}); // a 3 iscritti un 4° fa anche da riserva
+  }
+  cand.sort((a,b)=>a.score-b.score||a.n-b.n);
+  const pref1=cand.slice(0,3).map(c=>c.d);
+  const pref2=cand.slice(3,6).map(c=>c.d);
   return{pref1,pref2,avoid};
 }
 
