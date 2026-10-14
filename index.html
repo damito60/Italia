@@ -333,6 +333,7 @@ select{font-size:16px}
       <button class="tab" data-tabkey="trofei" onclick="showTab('trofei')">🏆 Trofei</button>
       <button class="tab" data-tabkey="scambi" onclick="showTab('scambi')">🔄 Scambi</button>
       <button class="tab" data-tabkey="roster" onclick="showTab('roster')" id="tab-btn-roster" style="display:none">👥 Roster</button>
+      <button class="tab" data-tabkey="risultati" onclick="showTab('risultati')" id="tab-btn-risultati" style="display:none">📈 Risultati</button>
       <button class="tab" data-tabkey="dctracker" id="tab-btn-dctracker" onclick="window.open('tracker.html','_blank')" style="display:none;background:var(--goldlt);color:var(--gold)">📊 DC Tracker ↗</button>
       <button class="tab" data-tabkey="guida" onclick="showTab('guida')">❓ Guida</button>
     </div>
@@ -508,6 +509,11 @@ select{font-size:16px}
       <div id="scambi-content"><div class="loading"><span class="spinner"></span>Caricamento...</div></div>
     </div>
 
+    <!-- TAB RISULTATI (admin-only) -->
+    <div id="tab-risultati" style="display:none">
+      <div id="risultati-content"><div class="loading"><span class="spinner"></span>Caricamento...</div></div>
+    </div>
+
     <!-- TAB ROSTER (admin-only) -->
     <div id="tab-roster" style="display:none">
       <div class="card">
@@ -577,7 +583,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 // Versione build — aggiorna a mano questa riga ogni volta che carichi un nuovo index.html,
 // così in fondo alla pagina di login vedi subito se è online la versione giusta.
-const APP_VERSION='v1.24 — 13 ott 2026 (Messaggio: "Libere per gli altri" riscritto — sempre 1ª/2ª scelta, Evitare solo le discipline affollate; controllo Valore CC; DC Tracker integrato)';
+const APP_VERSION='v1.25 — 14 ott 2026 (Optimizer su posizione stimata in classifica generale dai risultati reali; tab Risultati admin con controllo AP; messaggio: 6 gare = +5 AP, "Già piene" al posto di "Evitare", 5ª/6ª staffetta composte; promemoria obbligatorie bilingue)';
 
 const DISCS=['100m','200m','400m','800m','1500m','5000m','10000m','Marathon','110H','400H','3000S','LJ','TJ','HJ','PV','SP','DT','HT','JT'];
 const DL={'100m':'100m','200m':'200m','400m':'400m','800m':'800m','1500m':'1500m','5000m':'5000m','10000m':'10000m','Marathon':'Maratona / Marathon','110H':'110H / 100H','400H':'400H','3000S':'3000S','LJ':'Lungo / LJ','TJ':'Triplo / TJ','HJ':'Alto / HJ','PV':'Asta / PV','SP':'Peso / SP','DT':'Disco / DT','HT':'Martello / HT','JT':'Giavellotto / JT'};
@@ -585,7 +591,7 @@ const DL={'100m':'100m','200m':'200m','400m':'400m','800m':'800m','1500m':'1500m
 const DISC_SHORT={'100m':'100','200m':'200','400m':'400','800m':'800','1500m':'1500','5000m':'5000','10000m':'10K','Marathon':'MAR','110H':'110H','400H':'400H','3000S':'3000S','LJ':'LJ','TJ':'TJ','HJ':'HJ','PV':'PV','SP':'SP','DT':'DT','HT':'HT','JT':'JT'};
 const GRP={'100m':'SR','200m':'SR','400m':'SR','800m':'MR','1500m':'MR','5000m':'LR','10000m':'LR','Marathon':'LR','110H':'H','400H':'H','3000S':'H','LJ':'J','TJ':'J','HJ':'J','PV':'J','SP':'T','DT':'T','HT':'T','JT':'T'};
 let lang='it';
-const I18N={it:{tab_giorno:'📅 Giorno CC',tab_msg:'📨 Messaggio',tab_staff:'🏃 Staffette',tab_rank:'📊 Ranking',tab_insert:'✏️ Dati CC',tab_inventario:'🎒 Inventario',tab_trofei:'🏆 Trofei',tab_scambi:'🔄 Scambi',tab_guide:'❓ Guida',day1:'Lunedì',day2:'Martedì',day3:'Mercoledì',day4:'Giovedì',obl_day:'Obbligatorie del giorno',calc_btn:'Calcola e genera messaggio →',msg_empty:'Vai al tab "Giorno CC" e premi Calcola.',trofei_title:'Trofei & Trend settimanale',trofei_player:'Giocatore',trofei_pts:'Trofei',trofei_trend:'Trend',trofei_100:'Ultimo 100m',trofei_400:'Ultimo 400m',trofei_insert:'Inserisci dati trofei (solo admin)',trofei_save:'Salva trofei',trofei_no_data:'Nessun dato disponibile.',logout:'Esci',loading:'Caricamento...',error_conn:'Errore di connessione. Riprova.',error_pwd:'Password errata o giocatore non trovato.',error_sel:'Seleziona il tuo nome e inserisci la password.',saved:'✓ Salvato!',error_save:'Errore nel salvataggio: ',no_week:'Nessuna settimana attiva trovata.',admin_for:'Stai inserendo dati per:',obl_title:'Obbligatorie della settimana',obl_desc:'Inserisci le discipline obbligatorie assegnate ogni giorno.',gear_title:'Atleta 🔥, Allenatore 💧 e Centro 🏟 per gruppo',gear_desc:'Inserisci i valori che vedi nel gioco. Aggiorna solo quando fai un upgrade.',athlete:'Atleta 🔥',coach:'Allenatore 💧',center:'Centro 🏟',valcc_title:'Valore CC per disciplina',valcc_desc:'Il valore mostrato dal gioco per ogni disciplina. Non includere l\'allenatore: lo aggiungi separatamente qui sotto. Si aggiorna dal venerdì alla domenica.',valcc_info:'💡 Ranking CC = Valore CC disciplina + Allenatore del gruppo',save_gear:'Salva allenatore',save_att:'Salva attrezzatura',mode_equil:'Equilibrate',mode_top:'Top-heavy',mode_bal:'Bilanciato ottimale',mode_desc_equil:'Equilibrate: A=1,6,7,12 · B=2,5,8,11 · C=3,4,9,10 · D=13-16',mode_desc_top:'Top-heavy: A=top 4, poi Equilibrate B/C · D=13-16',mode_desc_bal:'Bilanciato ottimale: minimizza scarto Σscore tra le 3 griglie',mode_ranking:'Per ranking',mode_desc_ranking:'Per ranking: griglia 1 = 1°-4°, griglia 2 = 5°-8°, griglia 3 = 9°-12° · D=13-16',basis_title:'Base di calcolo',basis_cc:'Punteggio CC',basis_pb:'Solo PB',basis_desc_cc:'Punteggio CC: Valore CC + Allenatore (PB solo come spareggio)',basis_desc_pb:'Solo PB: ordine per PB 100m/400m del genere sprint della settimana · chi non ha PB va in coda',relay:'Griglia',relay_note1:'punta a punti',relay_note4:'paracadute',relay_free:'libera',select_day:'Seleziona giorno',player:'Giocatore',level:'Livello',rank_by_disc:'Ranking per disciplina',rank_toggle_disc:'Per disciplina',rank_toggle_overview:'Vista d\'insieme',rank_overview_title:'Vista d\'insieme — tutte le discipline',rank_overview_hint:'Ogni cella mostra la posizione in classifica del club per quella disciplina. Colore = percentile: 🟢 top 25% · 🔵 25-50% · 🟠 50-75% · ⚪ oltre 75%.',rank_strengths:'💪 Punti di forza',rank_weaknesses:'🔻 Punti deboli',rank_no_data:'Nessun dato disponibile per calcolare la vista d\'insieme.',score_cc:'Score CC',free1:'1ª libera',free2:'2ª libera',admin_mode:'Modalità admin — inserisci per',obl_label1:'Obbligatoria 1',obl_label2:'Obbligatoria 2',grp_sprint:'Sprint',grp_mid:'Media dist.',grp_long:'Lunga dist.',grp_hurdles:'Ostacoli',grp_jumps:'Salti',grp_throws:'Lanci',center_disc:'CENTRO 🏟 PER DISCIPLINA',not_pub:'Il messaggio per {DAY} non è ancora stato pubblicato dall\'admin. Controlla più tardi!',copy_msg:'📋 Copia messaggio completo',change_pwd:'🔐 Cambia password',pwd_desc:'Inserisci la password attuale e quella nuova.',pwd_old:'Password attuale',pwd_new:'Nuova password',pwd_confirm:'Conferma nuova',pwd_btn:'Cambia password',fifth_sixth:'Quinta e Sesta: scelta libera per i rimanenti.',msg_staffette:'STAFFETTE',msg_libere_top:'LIBERE CONSIGLIATE',msg_altri:'LIBERE CONSIGLIATE PER GLI ALTRI',msg_1scelta:'1ª scelta',msg_2scelta:'2ª scelta',msg_evitare:'Evitare',msg_note_top:'⭐ indica chi rientra anche tra i migliori del ranking generale del club, calcolato in base al punteggio medio su tutte le discipline (attrezzatura + allenatore): può cambiare di settimana in settimana.',msg_copertura:'4° di riserva, non guadagno punti',msg_note_cov:'🔧 indica un 4° giocatore di riserva su una disciplina già coperta dai primi 3: non aggiunge punti (il gioco conta solo i migliori 3), è solo un cuscinetto di sicurezza nel caso uno dei 3 titolari renda meno del previsto in gara.'},en:{tab_giorno:'📅 CC Day',tab_msg:'📨 Message',tab_staff:'🏃 Relays',tab_rank:'📊 Ranking',tab_insert:'✏️ CC Data',tab_inventario:'🎒 Inventory',tab_trofei:'🏆 Trophies',tab_scambi:'🔄 Trades',tab_guide:'❓ Guide',day1:'Monday',day2:'Tuesday',day3:'Wednesday',day4:'Thursday',obl_day:'Mandatory events of the day',calc_btn:'Calculate & generate message →',msg_empty:'Go to "CC Day" tab and press Calculate.',trofei_title:'Trophies & Weekly trend',trofei_player:'Player',trofei_pts:'Trophies',trofei_trend:'Trend',trofei_100:'Last 100m',trofei_400:'Last 400m',trofei_insert:'Insert trophies data (admin only)',trofei_save:'Save trophies',trofei_no_data:'No data available.',logout:'Logout',loading:'Loading...',error_conn:'Connection error. Please retry.',error_pwd:'Wrong password or player not found.',error_sel:'Select your name and enter the password.',saved:'✓ Saved!',error_save:'Save error: ',no_week:'No active week found.',admin_for:'Inserting data for:',obl_title:'Weekly mandatory events',obl_desc:'Enter the mandatory events assigned each day.',gear_title:'Athlete 🔥, Coach 💧 & Training Centre 🏟 by group',gear_desc:'Enter values from the game. Update only when you upgrade.',athlete:'Athlete 🔥',coach:'Coach 💧',center:'Centre 🏟',valcc_title:'CC Value by event',valcc_desc:'The value shown in the game for each event. Don\'t include the coach: add it separately below. Updates from Friday through Sunday.',valcc_info:'💡 CC Ranking = CC Value (event) + Coach (group)',save_gear:'Save coach',save_att:'Save equipment',mode_equil:'Balanced',mode_top:'Top-heavy',mode_bal:'Optimal balanced',mode_desc_equil:'Balanced: A=1,6,7,12 · B=2,5,8,11 · C=3,4,9,10 · D=13-16',mode_desc_top:'Top-heavy: A=top 4, then Balanced B/C · D=13-16',mode_desc_bal:'Optimal balanced: minimizes score gap between the 3 relays',mode_ranking:'By ranking',mode_desc_ranking:'By ranking: relay 1 = rank 1-4, relay 2 = rank 5-8, relay 3 = rank 9-12 · D=13-16',basis_title:'Calculation basis',basis_cc:'CC score',basis_pb:'PB only',basis_desc_cc:'CC score: CC Value + Coach (PB only as tie-break)',basis_desc_pb:'PB only: order by 100m/400m PB of the week\'s sprint gender · players without a PB go last',relay:'Relay',relay_note1:'scoring',relay_note4:'safety',relay_free:'free',select_day:'Select day',player:'Player',level:'Level',rank_by_disc:'Ranking by event',rank_toggle_disc:'By event',rank_toggle_overview:'Overview',rank_overview_title:'Overview — all events',rank_overview_hint:'Each cell shows the player\'s club rank for that event. Color = percentile: 🟢 top 25% · 🔵 25-50% · 🟠 50-75% · ⚪ beyond 75%.',rank_strengths:'💪 Strengths',rank_weaknesses:'🔻 Weaknesses',rank_no_data:'No data available to compute the overview.',score_cc:'CC Score',free1:'1st free',free2:'2nd free',admin_mode:'Admin mode — insert for',obl_label1:'Mandatory 1',obl_label2:'Mandatory 2',grp_sprint:'Sprint',grp_mid:'Mid dist.',grp_long:'Long dist.',grp_hurdles:'Hurdles',grp_jumps:'Jumps',grp_throws:'Throws',center_disc:'TRAINING CENTRE 🏟 BY EVENT',not_pub:'The message for {DAY} has not been published by the admin yet. Check later!',copy_msg:'📋 Copy full message',change_pwd:'🔐 Change password',pwd_desc:'Enter your current password and the new one.',pwd_old:'Current password',pwd_new:'New password',pwd_confirm:'Confirm new',pwd_btn:'Change password',fifth_sixth:'5th & 6th: free choice for the rest.',msg_staffette:'RELAYS',msg_libere_top:'RECOMMENDED FREE EVENTS',msg_altri:'RECOMMENDED FREE EVENTS FOR THE OTHERS',msg_1scelta:'1st choice',msg_2scelta:'2nd choice',msg_evitare:'Avoid',msg_note_top:'⭐ marks players who are also among the club\'s best overall, based on their average score across all events (gear + coach): it can change from week to week.',msg_copertura:'4th-string backup, no points gain',msg_note_cov:'🔧 marks a 4th backup player on an event already covered by the top 3: it adds no points (the game only counts the best 3), it is just a safety cushion in case one of the 3 starters underperforms in the actual match.'},fr:{tab_giorno:'📅 Jour CC',tab_msg:'📨 Message',tab_staff:'🏃 Relais',tab_rank:'📊 Classement',tab_insert:'✏️ Données CC',tab_inventario:'🎒 Inventaire',tab_trofei:'🏆 Trophées',tab_scambi:'🔄 Échanges',tab_guide:'❓ Guide',day1:'Lundi',day2:'Mardi',day3:'Mercredi',day4:'Jeudi',obl_day:'Épreuves obligatoires du jour',calc_btn:'Calculer et générer le message →',msg_empty:'Allez à l\'onglet "Jour CC" et appuyez sur Calculer.',trofei_title:'Trophées & Tendance hebdomadaire',trofei_player:'Joueur',trofei_pts:'Trophées',trofei_trend:'Tendance',trofei_100:'Dernier 100m',trofei_400:'Dernier 400m',trofei_insert:'Saisir les données trophées (admin uniquement)',trofei_save:'Enregistrer les trophées',trofei_no_data:'Aucune donnée disponible.',logout:'Déconnexion',loading:'Chargement...',error_conn:'Erreur de connexion. Réessayez.',error_pwd:'Mot de passe incorrect ou joueur introuvable.',error_sel:'Sélectionnez votre nom et entrez le mot de passe.',saved:'✓ Enregistré !',error_save:'Erreur lors de l\'enregistrement : ',no_week:'Aucune semaine active trouvée.',admin_for:'Vous saisissez des données pour :',obl_title:'Épreuves obligatoires de la semaine',obl_desc:'Saisissez les épreuves obligatoires assignées chaque jour.',gear_title:'Athlète 🔥, Entraîneur 💧 et Centre 🏟 par groupe',gear_desc:'Saisissez les valeurs affichées dans le jeu. Mettez à jour uniquement lors d\'une amélioration.',athlete:'Athlète 🔥',coach:'Entraîneur 💧',center:'Centre 🏟',valcc_title:'Valeur CC par épreuve',valcc_desc:'La valeur affichée par le jeu pour chaque épreuve. N\'incluez pas l\'entraîneur : ajoutez-le séparément ci-dessous. Se met à jour du vendredi au dimanche.',valcc_info:'💡 Classement CC = Valeur CC épreuve + Entraîneur du groupe',save_gear:'Enregistrer l\'entraîneur',save_att:'Enregistrer l\'équipement',mode_equil:'Équilibrées',mode_top:'Top-heavy',mode_bal:'Équilibre optimal',mode_desc_equil:'Équilibrées : A=1,6,7,12 · B=2,5,8,11 · C=3,4,9,10 · D=13-16',mode_desc_top:'Top-heavy : A=top 4, puis Équilibrées B/C · D=13-16',mode_desc_bal:'Équilibre optimal : minimise l\'écart Σscore entre les 3 grilles',mode_ranking:'Par classement',mode_desc_ranking:'Par classement : grille 1 = rang 1-4, grille 2 = rang 5-8, grille 3 = rang 9-12 · D=13-16',basis_title:'Base de calcul',basis_cc:'Score CC',basis_pb:'Records seuls',basis_desc_cc:'Score CC : Valeur CC + Entraîneur (record seulement pour départager)',basis_desc_pb:'Records seuls : ordre par record 100m/400m du genre sprint de la semaine · sans record = en dernier',relay:'Grille',relay_note1:'vise les points',relay_note4:'filet de sécurité',relay_free:'libre',select_day:'Sélectionner le jour',player:'Joueur',level:'Niveau',rank_by_disc:'Classement par épreuve',rank_toggle_disc:'Par épreuve',rank_toggle_overview:'Vue d\'ensemble',rank_overview_title:'Vue d\'ensemble — toutes les épreuves',rank_overview_hint:'Chaque cellule montre le classement du joueur dans le club pour cette épreuve. Couleur = percentile : 🟢 top 25% · 🔵 25-50% · 🟠 50-75% · ⚪ au-delà de 75%.',rank_strengths:'💪 Points forts',rank_weaknesses:'🔻 Points faibles',rank_no_data:'Aucune donnée disponible pour calculer la vue d\'ensemble.',score_cc:'Score CC',free1:'1ère libre',free2:'2ème libre',admin_mode:'Mode admin — saisie pour',obl_label1:'Obligatoire 1',obl_label2:'Obligatoire 2',grp_sprint:'Sprint',grp_mid:'Demi-fond',grp_long:'Fond',grp_hurdles:'Haies',grp_jumps:'Sauts',grp_throws:'Lancers',center_disc:'CENTRE 🏟 PAR ÉPREUVE',not_pub:'Le message pour {DAY} n\'a pas encore été publié par l\'admin. Revenez plus tard !',copy_msg:'📋 Copier le message complet',change_pwd:'🔐 Changer le mot de passe',pwd_desc:'Entrez le mot de passe actuel et le nouveau.',pwd_old:'Mot de passe actuel',pwd_new:'Nouveau mot de passe',pwd_confirm:'Confirmer le nouveau',pwd_btn:'Changer le mot de passe',fifth_sixth:'5ème et 6ème : choix libre pour le reste.',msg_staffette:'RELAIS',msg_libere_top:'ÉPREUVES LIBRES CONSEILLÉES',msg_altri:'ÉPREUVES LIBRES CONSEILLÉES POUR LES AUTRES',msg_1scelta:'1er choix',msg_2scelta:'2ème choix',msg_evitare:'À éviter',msg_note_top:'⭐ indique les joueurs qui font aussi partie des meilleurs du classement général du club, calculé sur le score moyen de toutes les épreuves (équipement + entraîneur) : peut changer chaque semaine.',msg_copertura:'4ème de réserve, pas de gain de points',msg_note_cov:'🔧 indique un 4ème joueur de réserve sur une épreuve déjà couverte par les 3 premiers : n\'ajoute pas de points (le jeu ne compte que les 3 meilleurs), c\'est juste un filet de sécurité au cas où l\'un des 3 titulaires ferait moins bien que prévu en match.'}};
+const I18N={it:{tab_giorno:'📅 Giorno CC',tab_msg:'📨 Messaggio',tab_staff:'🏃 Staffette',tab_rank:'📊 Ranking',tab_insert:'✏️ Dati CC',tab_inventario:'🎒 Inventario',tab_trofei:'🏆 Trofei',tab_scambi:'🔄 Scambi',tab_guide:'❓ Guida',day1:'Lunedì',day2:'Martedì',day3:'Mercoledì',day4:'Giovedì',obl_day:'Obbligatorie del giorno',calc_btn:'Calcola e genera messaggio →',msg_empty:'Vai al tab "Giorno CC" e premi Calcola.',trofei_title:'Trofei & Trend settimanale',trofei_player:'Giocatore',trofei_pts:'Trofei',trofei_trend:'Trend',trofei_100:'Ultimo 100m',trofei_400:'Ultimo 400m',trofei_insert:'Inserisci dati trofei (solo admin)',trofei_save:'Salva trofei',trofei_no_data:'Nessun dato disponibile.',logout:'Esci',loading:'Caricamento...',error_conn:'Errore di connessione. Riprova.',error_pwd:'Password errata o giocatore non trovato.',error_sel:'Seleziona il tuo nome e inserisci la password.',saved:'✓ Salvato!',error_save:'Errore nel salvataggio: ',no_week:'Nessuna settimana attiva trovata.',admin_for:'Stai inserendo dati per:',obl_title:'Obbligatorie della settimana',obl_desc:'Inserisci le discipline obbligatorie assegnate ogni giorno.',gear_title:'Atleta 🔥, Allenatore 💧 e Centro 🏟 per gruppo',gear_desc:'Inserisci i valori che vedi nel gioco. Aggiorna solo quando fai un upgrade.',athlete:'Atleta 🔥',coach:'Allenatore 💧',center:'Centro 🏟',valcc_title:'Valore CC per disciplina',valcc_desc:'Il valore mostrato dal gioco per ogni disciplina. Non includere l\'allenatore: lo aggiungi separatamente qui sotto. Si aggiorna dal venerdì alla domenica.',valcc_info:'💡 Ranking CC = Valore CC disciplina + Allenatore del gruppo',save_gear:'Salva allenatore',save_att:'Salva attrezzatura',mode_equil:'Equilibrate',mode_top:'Top-heavy',mode_bal:'Bilanciato ottimale',mode_desc_equil:'Equilibrate: A=1,6,7,12 · B=2,5,8,11 · C=3,4,9,10 · D=13-16',mode_desc_top:'Top-heavy: A=top 4, poi Equilibrate B/C · D=13-16',mode_desc_bal:'Bilanciato ottimale: minimizza scarto Σscore tra le 3 griglie',mode_ranking:'Per ranking',mode_desc_ranking:'Per ranking: griglia 1 = 1°-4°, griglia 2 = 5°-8°, griglia 3 = 9°-12° · D=13-16',basis_title:'Base di calcolo',basis_cc:'Punteggio CC',basis_pb:'Solo PB',basis_desc_cc:'Punteggio CC: Valore CC + Allenatore (PB solo come spareggio)',basis_desc_pb:'Solo PB: ordine per PB 100m/400m del genere sprint della settimana · chi non ha PB va in coda',relay:'Griglia',relay_note1:'punta a punti',relay_note4:'paracadute',relay_free:'solo AP',select_day:'Seleziona giorno',player:'Giocatore',level:'Livello',rank_by_disc:'Ranking per disciplina',rank_toggle_disc:'Per disciplina',rank_toggle_overview:'Vista d\'insieme',rank_overview_title:'Vista d\'insieme — tutte le discipline',rank_overview_hint:'Ogni cella mostra la posizione in classifica del club per quella disciplina. Colore = percentile: 🟢 top 25% · 🔵 25-50% · 🟠 50-75% · ⚪ oltre 75%.',rank_strengths:'💪 Punti di forza',rank_weaknesses:'🔻 Punti deboli',rank_no_data:'Nessun dato disponibile per calcolare la vista d\'insieme.',score_cc:'Score CC',free1:'1ª libera',free2:'2ª libera',admin_mode:'Modalità admin — inserisci per',obl_label1:'Obbligatoria 1',obl_label2:'Obbligatoria 2',grp_sprint:'Sprint',grp_mid:'Media dist.',grp_long:'Lunga dist.',grp_hurdles:'Ostacoli',grp_jumps:'Salti',grp_throws:'Lanci',center_disc:'CENTRO 🏟 PER DISCIPLINA',not_pub:'Il messaggio per {DAY} non è ancora stato pubblicato dall\'admin. Controlla più tardi!',copy_msg:'📋 Copia messaggio completo',change_pwd:'🔐 Cambia password',pwd_desc:'Inserisci la password attuale e quella nuova.',pwd_old:'Password attuale',pwd_new:'Nuova password',pwd_confirm:'Conferma nuova',pwd_btn:'Cambia password',fifth_sixth:'5ª e 6ª squadra: non prendono punti ma valgono i 5 AP, correte tutti!',msg_staffette:'STAFFETTE',msg_libere_top:'LIBERE CONSIGLIATE',msg_altri:'LIBERE CONSIGLIATE PER GLI ALTRI',msg_1scelta:'1ª scelta',msg_2scelta:'2ª scelta',msg_evitare:'Già piene (valgono solo i 5 AP: se puoi, scegli altro)',msg_ap:'✅ Fai tutte e 6 le gare (4 individuali + 2 staffette): ognuna vale +5 punti attività (AP), anche se non entri tra i primi 3 del club.',msg_riserve:'Riserve (staffette)',msg_note_top:'⭐ indica chi rientra anche tra i migliori del ranking generale del club, calcolato in base al punteggio medio su tutte le discipline (attrezzatura + allenatore): può cambiare di settimana in settimana.',msg_copertura:'4° di riserva, non guadagno punti',msg_note_cov:'🔧 indica un 4° giocatore di riserva su una disciplina già coperta dai primi 3: non aggiunge punti (il gioco conta solo i migliori 3), è solo un cuscinetto di sicurezza nel caso uno dei 3 titolari renda meno del previsto in gara.'},en:{tab_giorno:'📅 CC Day',tab_msg:'📨 Message',tab_staff:'🏃 Relays',tab_rank:'📊 Ranking',tab_insert:'✏️ CC Data',tab_inventario:'🎒 Inventory',tab_trofei:'🏆 Trophies',tab_scambi:'🔄 Trades',tab_guide:'❓ Guide',day1:'Monday',day2:'Tuesday',day3:'Wednesday',day4:'Thursday',obl_day:'Mandatory events of the day',calc_btn:'Calculate & generate message →',msg_empty:'Go to "CC Day" tab and press Calculate.',trofei_title:'Trophies & Weekly trend',trofei_player:'Player',trofei_pts:'Trophies',trofei_trend:'Trend',trofei_100:'Last 100m',trofei_400:'Last 400m',trofei_insert:'Insert trophies data (admin only)',trofei_save:'Save trophies',trofei_no_data:'No data available.',logout:'Logout',loading:'Loading...',error_conn:'Connection error. Please retry.',error_pwd:'Wrong password or player not found.',error_sel:'Select your name and enter the password.',saved:'✓ Saved!',error_save:'Save error: ',no_week:'No active week found.',admin_for:'Inserting data for:',obl_title:'Weekly mandatory events',obl_desc:'Enter the mandatory events assigned each day.',gear_title:'Athlete 🔥, Coach 💧 & Training Centre 🏟 by group',gear_desc:'Enter values from the game. Update only when you upgrade.',athlete:'Athlete 🔥',coach:'Coach 💧',center:'Centre 🏟',valcc_title:'CC Value by event',valcc_desc:'The value shown in the game for each event. Don\'t include the coach: add it separately below. Updates from Friday through Sunday.',valcc_info:'💡 CC Ranking = CC Value (event) + Coach (group)',save_gear:'Save coach',save_att:'Save equipment',mode_equil:'Balanced',mode_top:'Top-heavy',mode_bal:'Optimal balanced',mode_desc_equil:'Balanced: A=1,6,7,12 · B=2,5,8,11 · C=3,4,9,10 · D=13-16',mode_desc_top:'Top-heavy: A=top 4, then Balanced B/C · D=13-16',mode_desc_bal:'Optimal balanced: minimizes score gap between the 3 relays',mode_ranking:'By ranking',mode_desc_ranking:'By ranking: relay 1 = rank 1-4, relay 2 = rank 5-8, relay 3 = rank 9-12 · D=13-16',basis_title:'Calculation basis',basis_cc:'CC score',basis_pb:'PB only',basis_desc_cc:'CC score: CC Value + Coach (PB only as tie-break)',basis_desc_pb:'PB only: order by 100m/400m PB of the week\'s sprint gender · players without a PB go last',relay:'Relay',relay_note1:'scoring',relay_note4:'safety',relay_free:'AP only',select_day:'Select day',player:'Player',level:'Level',rank_by_disc:'Ranking by event',rank_toggle_disc:'By event',rank_toggle_overview:'Overview',rank_overview_title:'Overview — all events',rank_overview_hint:'Each cell shows the player\'s club rank for that event. Color = percentile: 🟢 top 25% · 🔵 25-50% · 🟠 50-75% · ⚪ beyond 75%.',rank_strengths:'💪 Strengths',rank_weaknesses:'🔻 Weaknesses',rank_no_data:'No data available to compute the overview.',score_cc:'CC Score',free1:'1st free',free2:'2nd free',admin_mode:'Admin mode — insert for',obl_label1:'Mandatory 1',obl_label2:'Mandatory 2',grp_sprint:'Sprint',grp_mid:'Mid dist.',grp_long:'Long dist.',grp_hurdles:'Hurdles',grp_jumps:'Jumps',grp_throws:'Throws',center_disc:'TRAINING CENTRE 🏟 BY EVENT',not_pub:'The message for {DAY} has not been published by the admin yet. Check later!',copy_msg:'📋 Copy full message',change_pwd:'🔐 Change password',pwd_desc:'Enter your current password and the new one.',pwd_old:'Current password',pwd_new:'New password',pwd_confirm:'Confirm new',pwd_btn:'Change password',fifth_sixth:'5th & 6th teams: no points, but worth the 5 AP, everyone runs!',msg_staffette:'RELAYS',msg_libere_top:'RECOMMENDED FREE EVENTS',msg_altri:'RECOMMENDED FREE EVENTS FOR THE OTHERS',msg_1scelta:'1st choice',msg_2scelta:'2nd choice',msg_evitare:'Already full (only worth the 5 AP: pick something else if you can)',msg_ap:'✅ Run all 6 races (4 individual + 2 relays): each one is worth +5 activity points (AP), even if you don\'t make our club\'s top 3.',msg_riserve:'Reserves (relays)',msg_note_top:'⭐ marks players who are also among the club\'s best overall, based on their average score across all events (gear + coach): it can change from week to week.',msg_copertura:'4th-string backup, no points gain',msg_note_cov:'🔧 marks a 4th backup player on an event already covered by the top 3: it adds no points (the game only counts the best 3), it is just a safety cushion in case one of the 3 starters underperforms in the actual match.'},fr:{tab_giorno:'📅 Jour CC',tab_msg:'📨 Message',tab_staff:'🏃 Relais',tab_rank:'📊 Classement',tab_insert:'✏️ Données CC',tab_inventario:'🎒 Inventaire',tab_trofei:'🏆 Trophées',tab_scambi:'🔄 Échanges',tab_guide:'❓ Guide',day1:'Lundi',day2:'Mardi',day3:'Mercredi',day4:'Jeudi',obl_day:'Épreuves obligatoires du jour',calc_btn:'Calculer et générer le message →',msg_empty:'Allez à l\'onglet "Jour CC" et appuyez sur Calculer.',trofei_title:'Trophées & Tendance hebdomadaire',trofei_player:'Joueur',trofei_pts:'Trophées',trofei_trend:'Tendance',trofei_100:'Dernier 100m',trofei_400:'Dernier 400m',trofei_insert:'Saisir les données trophées (admin uniquement)',trofei_save:'Enregistrer les trophées',trofei_no_data:'Aucune donnée disponible.',logout:'Déconnexion',loading:'Chargement...',error_conn:'Erreur de connexion. Réessayez.',error_pwd:'Mot de passe incorrect ou joueur introuvable.',error_sel:'Sélectionnez votre nom et entrez le mot de passe.',saved:'✓ Enregistré !',error_save:'Erreur lors de l\'enregistrement : ',no_week:'Aucune semaine active trouvée.',admin_for:'Vous saisissez des données pour :',obl_title:'Épreuves obligatoires de la semaine',obl_desc:'Saisissez les épreuves obligatoires assignées chaque jour.',gear_title:'Athlète 🔥, Entraîneur 💧 et Centre 🏟 par groupe',gear_desc:'Saisissez les valeurs affichées dans le jeu. Mettez à jour uniquement lors d\'une amélioration.',athlete:'Athlète 🔥',coach:'Entraîneur 💧',center:'Centre 🏟',valcc_title:'Valeur CC par épreuve',valcc_desc:'La valeur affichée par le jeu pour chaque épreuve. N\'incluez pas l\'entraîneur : ajoutez-le séparément ci-dessous. Se met à jour du vendredi au dimanche.',valcc_info:'💡 Classement CC = Valeur CC épreuve + Entraîneur du groupe',save_gear:'Enregistrer l\'entraîneur',save_att:'Enregistrer l\'équipement',mode_equil:'Équilibrées',mode_top:'Top-heavy',mode_bal:'Équilibre optimal',mode_desc_equil:'Équilibrées : A=1,6,7,12 · B=2,5,8,11 · C=3,4,9,10 · D=13-16',mode_desc_top:'Top-heavy : A=top 4, puis Équilibrées B/C · D=13-16',mode_desc_bal:'Équilibre optimal : minimise l\'écart Σscore entre les 3 grilles',mode_ranking:'Par classement',mode_desc_ranking:'Par classement : grille 1 = rang 1-4, grille 2 = rang 5-8, grille 3 = rang 9-12 · D=13-16',basis_title:'Base de calcul',basis_cc:'Score CC',basis_pb:'Records seuls',basis_desc_cc:'Score CC : Valeur CC + Entraîneur (record seulement pour départager)',basis_desc_pb:'Records seuls : ordre par record 100m/400m du genre sprint de la semaine · sans record = en dernier',relay:'Grille',relay_note1:'vise les points',relay_note4:'filet de sécurité',relay_free:'AP seulement',select_day:'Sélectionner le jour',player:'Joueur',level:'Niveau',rank_by_disc:'Classement par épreuve',rank_toggle_disc:'Par épreuve',rank_toggle_overview:'Vue d\'ensemble',rank_overview_title:'Vue d\'ensemble — toutes les épreuves',rank_overview_hint:'Chaque cellule montre le classement du joueur dans le club pour cette épreuve. Couleur = percentile : 🟢 top 25% · 🔵 25-50% · 🟠 50-75% · ⚪ au-delà de 75%.',rank_strengths:'💪 Points forts',rank_weaknesses:'🔻 Points faibles',rank_no_data:'Aucune donnée disponible pour calculer la vue d\'ensemble.',score_cc:'Score CC',free1:'1ère libre',free2:'2ème libre',admin_mode:'Mode admin — saisie pour',obl_label1:'Obligatoire 1',obl_label2:'Obligatoire 2',grp_sprint:'Sprint',grp_mid:'Demi-fond',grp_long:'Fond',grp_hurdles:'Haies',grp_jumps:'Sauts',grp_throws:'Lancers',center_disc:'CENTRE 🏟 PAR ÉPREUVE',not_pub:'Le message pour {DAY} n\'a pas encore été publié par l\'admin. Revenez plus tard !',copy_msg:'📋 Copier le message complet',change_pwd:'🔐 Changer le mot de passe',pwd_desc:'Entrez le mot de passe actuel et le nouveau.',pwd_old:'Mot de passe actuel',pwd_new:'Nouveau mot de passe',pwd_confirm:'Confirmer le nouveau',pwd_btn:'Changer le mot de passe',fifth_sixth:'5ème et 6ème équipes : pas de points, mais les 5 AP comptent, tout le monde court !',msg_staffette:'RELAIS',msg_libere_top:'ÉPREUVES LIBRES CONSEILLÉES',msg_altri:'ÉPREUVES LIBRES CONSEILLÉES POUR LES AUTRES',msg_1scelta:'1er choix',msg_2scelta:'2ème choix',msg_evitare:'Déjà pleines (seulement les 5 AP : choisis autre chose si tu peux)',msg_ap:'✅ Fais les 6 courses (4 individuelles + 2 relais) : chacune vaut +5 points d\'activité (AP), même si tu n\'es pas dans le top 3 du club.',msg_riserve:'Réserves (relais)',msg_note_top:'⭐ indique les joueurs qui font aussi partie des meilleurs du classement général du club, calculé sur le score moyen de toutes les épreuves (équipement + entraîneur) : peut changer chaque semaine.',msg_copertura:'4ème de réserve, pas de gain de points',msg_note_cov:'🔧 indique un 4ème joueur de réserve sur une épreuve déjà couverte par les 3 premiers : n\'ajoute pas de points (le jeu ne compte que les 3 meilleurs), c\'est juste un filet de sécurité au cas où l\'un des 3 titulaires ferait moins bien que prévu en match.'}};
 function t(k){return(I18N[lang]||I18N.it)[k]||I18N.it[k]||k;}
 function L(it,en,fr){if(lang==='fr')return fr;if(lang==='en')return en;return it;} // selettore inline a 3 lingue, per i testi non gestiti da t()/I18N
 function bi(k){return I18N.it[k]+' / '+I18N.en[k];} // etichetta bilingue IT / EN, usata nel messaggio CC
@@ -642,6 +648,8 @@ let pbDrafts={};
 let allPlayers=[];
 let rankings={};   // player_id -> {score_100m, score_200m, ...}
 let oblData={};    // day -> player_id -> [disc1, disc2]
+let risultati=[];  // righe italy_risultati della settimana attiva (risultati reali di gara)
+let posModelCache=null; // modello posizione-in-lega, ricalcolato quando cambiano risultati o ranking
 let adminActingAs=null;
 let trofeiData={current:{},previous:{}}; // week trophies
 let messaggiData={};  // day -> {messaggio, staff_mode, published_by, published_at}
@@ -741,6 +749,7 @@ async function loginSuccess() {
   else document.getElementById('user-msg-bar').style.display='block';
   if (isAdmin) document.getElementById('admin-week-bar').style.display='block';
   if (isAdmin) document.getElementById('tab-btn-roster').style.display='';
+  if (isAdmin) document.getElementById('tab-btn-risultati').style.display='';
   if (SHOW_DC_TRACKER) document.getElementById('tab-btn-dctracker').style.display='';
 
   // Carica sempre la lista giocatori (serve per dropdown admin e per i dati)
@@ -768,7 +777,7 @@ async function loginSuccess() {
 // Deep-linking generico: apre direttamente un tab dall'hash dell'URL
 // (es. #messaggio, #ranking, #trofei), ma SOLO dopo il login — prima
 // l'hash viene ignorato e resta il tab di default (Giorno CC).
-const VALID_TABS=['giorno','messaggio','staffette','ranking','inserisci','inventario','trofei','scambi','roster','guida'];
+const VALID_TABS=['giorno','messaggio','staffette','ranking','inserisci','inventario','trofei','scambi','roster','risultati','guida'];
 function applyDeepLinkTab(){
   const h=(location.hash||'').replace('#','').trim().toLowerCase();
   if(VALID_TABS.includes(h)) showTab(h);
@@ -962,6 +971,11 @@ async function loadAllData() {
       pbDrafts = {};
       (drafts||[]).forEach(r=>{ pbDrafts[r.player_id]=r; });
     } catch(e){ pbDrafts={}; }
+
+    // Risultati reali di gara (v1.25): servono all'optimizer per stimare la
+    // posizione in classifica generale. Se la tabella non c'è ancora si va avanti
+    // col vecchio comportamento (rank interno al club).
+    await loadRisultati();
   } catch(e) { console.error('Data load error:', e); }
 }
 
@@ -994,8 +1008,160 @@ function getRank(playerId, disc) {
   return getRankForDisc(disc)[playerId] || null;
 }
 
+// ── POSIZIONE IN LEGA STIMATA (v1.25) ─────────────────────────────────
+// Il gioco assegna i punti in base alla posizione nella classifica GENERALE
+// (120 − 4 × (pos − 1), zero oltre il 30°), mentre getRank() è la posizione
+// DENTRO il club. Usare il rank di club come se fosse la posizione generale
+// sopravvaluta enormemente i nostri migliori (il nostro 1° nei 110H non è 1°
+// in lega) e falsa la scelta di DOVE mandare ciascuno.
+// getPos() stima la posizione generale così:
+//  1. prestazione: risultato reale della settimana se il giocatore ha già
+//     corso/saltato/lanciato quella disciplina (le prestazioni sono stabili
+//     entro ±0,5% tra un giorno e l'altro); altrimenti stimata dal Valore CC
+//     + Allenatore con una retta calibrata sui giocatori che hanno entrambi;
+//  2. posizione: interpolata sulle coppie (risultato → posizione) reali della
+//     settimana in quella disciplina;
+//  3. senza dati sufficienti: rank di club convertito con la posizione media
+//     del k-esimo migliore del club in tutte le discipline. Senza nessun
+//     risultato in tabella → rank di club puro (comportamento fino alla v1.24).
+const risCode = d => DISC_TO_GEAR_COL[d].slice(5); // '100m','marathon','110h','lj'…
+const RIS_RELAYS = {'4x100':'4×100m','4x400':'4×400m'};
+function discFromRisCode(code){ return DISCS.find(d=>risCode(d)===code) || null; }
+
+async function loadRisultati(){
+  try{
+    risultati = weekData ? (await sbGet('italy_risultati', `select=*&week_id=eq.${weekData.id}&order=giorno,disciplina,id`))||[] : [];
+  }catch(e){ risultati=[]; }
+  posModelCache=null;
+}
+
+function linFit(xs,ys){
+  const n=xs.length; if(n<2) return null;
+  const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let sxx=0,sxy=0,syy=0;
+  for(let i=0;i<n;i++){ sxx+=(xs[i]-mx)**2; sxy+=(xs[i]-mx)*(ys[i]-my); syy+=(ys[i]-my)**2; }
+  if(sxx===0) return null;
+  const b=sxy/sxx; return {a:my-b*mx, b, r: syy>0 ? sxy/Math.sqrt(sxx*syy) : 0};
+}
+
+function buildPosModel(){
+  const ind=risultati.filter(r=>r.squadra==null && discFromRisCode(r.disciplina));
+  const model={active:ind.length>0, disc:{}, fallback:k=>k};
+  if(!model.active) return model;
+
+  // Fallback: posizione media del k-esimo migliore del club (tra chi ha preso punti)
+  const byK={}, groups={};
+  ind.forEach(r=>{ const key=r.giorno+'|'+r.disciplina; (groups[key]=groups[key]||[]).push(r); });
+  Object.values(groups).forEach(g=>{
+    g.filter(r=>r.posizione!=null).sort((a,b)=>a.posizione-b.posizione)
+     .forEach((r,i)=>{ (byK[i+1]=byK[i+1]||[]).push(r.posizione); });
+  });
+  const ks=Object.keys(byK).map(Number).sort((a,b)=>a-b);
+  const kAvg=ks.map(k=>byK[k].reduce((a,b)=>a+b,0)/byK[k].length);
+  const kFit=linFit(ks,kAvg);
+  if(kFit && kFit.b>0) model.fallback=k=>Math.max(1,kFit.a+kFit.b*k);
+  else if(kAvg.length) model.fallback=k=>Math.max(1,kAvg[0]*k);
+
+  for(const d of DISCS){
+    const code=risCode(d), field=FIELD_EVENTS.has(d);
+    const rows=ind.filter(r=>r.disciplina===code);
+    if(!rows.length) continue;
+    // prestazione reale per giocatore: quella del giorno più recente
+    // (se nel frattempo ha migliorato l'attrezzatura conta l'ultima)
+    const last={};
+    rows.forEach(r=>{ const cur=last[r.player_id];
+      if(!cur || r.giorno>cur.giorno) last[r.player_id]={giorno:r.giorno, v:[parseFloat(r.valore)]};
+      else if(r.giorno===cur.giorno) cur.v.push(parseFloat(r.valore)); });
+    const perf={};
+    Object.entries(last).forEach(([p,x])=>{ perf[p]=x.v.reduce((a,b)=>a+b,0)/x.v.length; });
+    // ancore risultato → posizione, ordinate dal migliore al peggiore
+    const anchors=rows.filter(r=>r.posizione!=null)
+      .map(r=>({v:parseFloat(r.valore), pos:r.posizione}))
+      .sort((a,b)=> field ? b.v-a.v : a.v-b.v);
+    // retta prestazione ~ Valore CC + Allenatore, solo se ha il verso giusto
+    const xs=[],ys=[];
+    Object.entries(perf).forEach(([p,v])=>{ const sc=getScore(p,d); if(sc!=null){ xs.push(sc); ys.push(v); } });
+    // La retta si usa solo se il Valore CC spiega davvero i risultati (|r| ≥ 0,5):
+    // con una retta piatta i giocatori deboli verrebbero stimati vicini alla media
+    // e risulterebbero "da punti" anche quando non lo sono.
+    let fit=xs.length>=4 ? linFit(xs,ys) : null;
+    if(fit && (field ? fit.r<0.5 : fit.r>-0.5)) fit=null;
+    model.disc[d]={field, perf, anchors, fit};
+  }
+  return model;
+}
+function posModel(){ if(!posModelCache) posModelCache=buildPosModel(); return posModelCache; }
+
+// Posizione in classifica generale data una prestazione.
+// Le ancore (risultato → posizione) vengono da giorni diversi con avversari
+// diversi, quindi non sono perfettamente monotone: prima le si rende monotone
+// (PAVA: media dei tratti che vanno "al contrario"), poi si interpola.
+// Fuori dall'intervallo noto si estrapola con la retta posizione ~ risultato.
+function monotoneAnchors(m){
+  if(m._mono!==undefined) return m._mono;
+  const blocks=[];
+  for(const a of m.anchors){ // anchors già ordinate dal migliore al peggiore
+    blocks.push({vs:[a.v],sum:a.pos,n:1});
+    while(blocks.length>1){
+      const b=blocks[blocks.length-1], c=blocks[blocks.length-2];
+      if(c.sum/c.n<=b.sum/b.n) break;
+      c.vs.push(...b.vs); c.sum+=b.sum; c.n+=b.n; blocks.pop();
+    }
+  }
+  const mono=blocks.map(b=>({v:b.vs.reduce((x,y)=>x+y,0)/b.vs.length, pos:b.sum/b.n}));
+  let slope=null;
+  const f=linFit(m.anchors.map(a=>a.v), m.anchors.map(a=>a.pos));
+  if(f && (m.field ? f.b<0 : f.b>0)) slope=f.b;
+  else if(mono.length>=2) slope=(mono[mono.length-1].pos-mono[0].pos)/(mono[mono.length-1].v-mono[0].v);
+  m._mono={pts:mono, slope};
+  return m._mono;
+}
+function posFromPerf(m,v){
+  const {pts:A, slope}=monotoneAnchors(m);
+  if(A.length<2 || slope==null || !isFinite(slope)) return null;
+  const g=x=> m.field ? x : -x;                 // "bontà": più alta = meglio
+  if(g(v)>=g(A[0].v)) return Math.max(1, A[0].pos+slope*(v-A[0].v));
+  const L=A[A.length-1];
+  if(g(v)<=g(L.v)) return Math.max(1, L.pos+slope*(v-L.v));
+  for(let i=0;i<A.length-1;i++){
+    const lo=A[i], hi=A[i+1];
+    if(g(v)<=g(lo.v) && g(v)>=g(hi.v)){
+      return lo.v===hi.v ? lo.pos : lo.pos+(hi.pos-lo.pos)*(v-lo.v)/(hi.v-lo.v);
+    }
+  }
+  return null;
+}
+
+// Prestazione (reale o stimata) di un giocatore in una disciplina, null se ignota
+function perfOf(playerId,disc){
+  const m=posModel().disc[disc]; if(!m) return null;
+  if(m.perf[playerId]!=null) return m.perf[playerId];
+  if(m.fit){ const sc=getScore(playerId,disc); if(sc!=null) return m.fit.a+m.fit.b*sc; }
+  return null;
+}
+function isRealPerf(playerId,disc){ const m=posModel().disc[disc]; return !!(m && m.perf[playerId]!=null); }
+
+function getPos(playerId,disc){
+  const M=posModel();
+  if(!M.active) return getRank(playerId,disc);       // nessun risultato: come prima
+  const m=M.disc[disc];
+  if(m){
+    const v=perfOf(playerId,disc);
+    if(v!=null){ const p=posFromPerf(m,v); if(p!=null) return p; }
+  }
+  const r=getRank(playerId,disc);
+  return r ? M.fallback(r) : null;
+}
+
 function rClass(r){if(!r||r>23)return 'r4';if(r<=3)return 'r1';if(r<=6)return 'r2';if(r<=10)return 'r3';return 'r4';}
 function rPill(p,d){const r=getRank(p,d);return `<span class="rp ${rClass(r)}">${r||'—'}</span>`;}
+// Accanto al rank di club: posizione stimata in classifica generale (● = da risultato reale)
+function posHint(p,d){
+  if(!posModel().active) return '';
+  const pos=getPos(p,d); if(!pos) return '';
+  const real=isRealPerf(p,d);
+  return ` <span style="font-size:10px;color:var(--text3);font-family:var(--mono)" title="Posizione stimata in classifica generale${real?' (da risultato reale)':''}">≈${Math.round(pos)}°${real?'●':''}</span>`;
+}
 
 // ── SCORE CORRETTO (admin-only, sperimentale) ──────────────────────────
 // Stima: il coach pesa ~2-3x un punto di Valore CC (analisi DC Tracker su
@@ -1038,8 +1204,8 @@ function getRankCorretto(playerId, disc, k=K_COACH) {
 
 // ── TABS ─────────────────────────────────────────────────────
 function showTab(t){
-  if(t==='roster' && !isAdmin) t='giorno'; // sicurezza: tab admin-only anche via deep-link hash
-  ['giorno','messaggio','staffette','ranking','inserisci','inventario','trofei','scambi','roster','guida'].forEach(n=>{
+  if((t==='roster'||t==='risultati') && !isAdmin) t='giorno'; // sicurezza: tab admin-only anche via deep-link hash
+  ['giorno','messaggio','staffette','ranking','inserisci','inventario','trofei','scambi','roster','risultati','guida'].forEach(n=>{
     document.getElementById('tab-'+n).style.display='none';
   });
   document.getElementById('tab-'+t).style.display='block';
@@ -1055,7 +1221,169 @@ function showTab(t){
   if(t==='inventario') renderInventarioTab();
   if(t==='scambi') renderScambiTab();
   if(t==='roster') renderRoster();
+  if(t==='risultati') renderRisultati();
   if(t==='guida') document.getElementById('guida-card-content').innerHTML=renderGuidaContent();
+}
+
+
+// ── TAB RISULTATI (admin-only, v1.25) ─────────────────────────────────
+// Risultati reali di gara del nostro club (da screenshot del tab Risultati del
+// gioco). Servono a getPos() per stimare la posizione in classifica generale.
+// Punti = 120 − 4 × (posizione − 1), zero oltre il 30° o se fuori dai 3 del club
+// (posizione vuota). Ogni gara corsa vale anche 5 AP (max 30 al giorno).
+let risDay=1;
+const RIS_ORDER=()=>[...DISCS.map(d=>risCode(d)),'4x100','4x400'];
+function risLabel(code){ const d=discFromRisCode(code); return d?(DL[d]||d):(RIS_RELAYS[code]||code); }
+function risPts(pos){ return pos ? Math.max(0,Math.round(pts(pos))) : 0; }
+// Normalizza il risultato come lo mostra il gioco ('10.471s', '2:14:53.417s', '8.925m')
+function risParse(raw,code){
+  const d=discFromRisCode(code);
+  const clean=String(raw||'').trim().replace(/\s/g,'').replace(/[sm]$/i,'');
+  const v=parsePB(clean);
+  if(v==null||isNaN(v)||v<=0) return null;
+  const isFld=d && FIELD_EVENTS.has(d);
+  return {valore:v, risultato: isFld ? formatPB(v,d) : formatPB(v,d||'100m')+'s'};
+}
+
+async function renderRisultati(){
+  const el=document.getElementById('risultati-content');
+  if(!el) return;
+  if(!weekData){ el.innerHTML=`<div class="alert a-warn">${t('no_week')}</div>`; return; }
+  el.innerHTML=`<div class="loading"><span class="spinner"></span>Caricamento...</div>`;
+  await loadRisultati();
+  const players=allPlayers.filter(p=>p.active!==false);
+  const dayLbl={1:'Lun / Mon',2:'Mar / Tue',3:'Mer / Wed',4:'Gio / Thu'};
+
+  // Riepilogo per giorno: punti individuali, staffette, AP
+  const sum={};
+  [1,2,3,4].forEach(g=>{
+    const rows=risultati.filter(r=>r.giorno===g);
+    const ind=rows.filter(r=>r.squadra==null).reduce((a,r)=>a+(r.punti||0),0);
+    const teams={}; rows.filter(r=>r.squadra!=null).forEach(r=>{ teams[r.disciplina+'|'+r.squadra]=r.punti||0; });
+    const rel=Object.values(teams).reduce((a,b)=>a+b,0);
+    const per={}; rows.forEach(r=>{ per[r.player_id]=(per[r.player_id]||0)+1; });
+    const ap=Object.values(per).reduce((a,n)=>a+Math.min(6,n)*5,0);
+    sum[g]={n:rows.length, ind, rel, ap, per};
+  });
+
+  let h=`<div class="card">
+    <div class="card-title">📈 Risultati reali — ${weekData.label||('#'+weekData.id)}</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px">Risultati del nostro club giorno per giorno. L'optimizer li usa per stimare la posizione in classifica generale: chi ha già un risultato in una disciplina viene valutato su quello, non sulla stima da Valore CC.</p>
+    <table style="font-size:12px;margin-bottom:12px"><thead><tr><th>Giorno</th><th>Gare</th><th>Punti individuali</th><th>Punti staffette</th><th>AP</th><th>Totale (come nel gioco)</th></tr></thead><tbody>`;
+  [1,2,3,4].forEach(g=>{
+    const x=sum[g]; if(!x.n){ h+=`<tr><td>${dayLbl[g]}</td><td colspan="5" style="color:var(--text3)">—</td></tr>`; return; }
+    h+=`<tr><td>${dayLbl[g]}</td><td>${x.n}</td><td>${x.ind}</td><td>${x.rel}</td><td>${x.ap}</td><td style="font-weight:700">${x.ind+x.rel+x.ap}</td></tr>`;
+  });
+  h+=`</tbody></table>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">${[1,2,3,4].map(g=>`<button class="btn-primary-sm" style="${g===risDay?'':'background:var(--bg3);color:var(--text);border:1px solid var(--border)'}" onclick="risDay=${g};renderRisultati()">${dayLbl[g]}</button>`).join('')}</div>
+  </div>`;
+
+  // Controllo AP del giorno: chi non ha fatto tutte e 6 le gare
+  const x=sum[risDay];
+  if(x.n){
+    const short=players.map(p=>({id:p.id,n:x.per[p.id]||0})).filter(p=>p.n<6).sort((a,b)=>a.n-b.n||a.id.localeCompare(b.id));
+    const lost=short.reduce((a,p)=>a+(6-p.n)*5,0);
+    h+=`<div class="card"><div class="card-title">✅ Tutte e 6 le gare? — ${dayLbl[risDay]}</div>`;
+    if(!short.length){
+      h+=`<div class="alert a-success" style="margin-bottom:0">Tutti i ${players.length} giocatori hanno fatto 6 gare: nessun AP perso.</div>`;
+      risApReminder='';
+    }else{
+      h+=`<div class="alert a-warn" style="margin-bottom:10px">⚠️ <strong>${short.length}</strong> giocatori sotto le 6 gare · <strong>${lost}</strong> AP persi</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${short.map(p=>`<span class="obl-chip" style="border-color:var(--orange)"><span>${p.id}</span><span class="badge b-warn" style="font-size:9px">${p.n}/6</span></span>`).join('')}</div>`;
+      risApReminder=`⚠️ *Gare non fatte — ${dayLbl[risDay]} / Races not run*\n`+short.map(p=>`- ${p.id}: ${p.n}/6`).join('\n')+
+        `\n\nOgni gara vale +5 punti attività, anche se non entri tra i primi 3: fatele tutte e 6 (4 individuali + 2 staffette) 🙏\nEvery race is worth +5 activity points, even if you don't make our top 3: please run all 6 (4 individual + 2 relays) 🙏`;
+      h+=`<button class="btn-copy" onclick="copyRisApReminder()">📋 Copia promemoria</button>`;
+    }
+    h+=`</div>`;
+  }
+
+  // Tabella risultati del giorno, per disciplina
+  const rows=risultati.filter(r=>r.giorno===risDay);
+  h+=`<div class="card"><div class="card-title">Risultati — ${dayLbl[risDay]}</div>`;
+  if(!rows.length){
+    h+=`<p style="font-size:12px;color:var(--text3)">Nessun risultato per questo giorno.</p>`;
+  }else{
+    h+=`<table style="font-size:12px"><thead><tr><th>Disciplina</th><th>Giocatore</th><th>Sq./Fraz.</th><th>Risultato</th><th>Pos.</th><th>Punti</th><th></th></tr></thead><tbody>`;
+    for(const code of RIS_ORDER()){
+      const rs=rows.filter(r=>r.disciplina===code).sort((a,b)=>(a.squadra||0)-(b.squadra||0)||(a.frazione||0)-(b.frazione||0)||(a.posizione||999)-(b.posizione||999));
+      rs.forEach((r,i)=>{
+        h+=`<tr>
+          <td style="font-weight:600">${i===0?risLabel(code):''}</td>
+          <td>${r.player_id}</td>
+          <td style="font-family:var(--mono);color:var(--text3)">${r.squadra!=null?r.squadra+'/'+(r.frazione||'—'):''}</td>
+          <td><input id="ris_r_${r.id}" value="${r.risultato}" style="width:110px;font-family:var(--mono);font-size:12px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></td>
+          <td><input id="ris_p_${r.id}" type="number" min="1" value="${r.posizione??''}" style="width:56px;font-size:12px;padding:3px 5px;border:1px solid var(--border);border-radius:5px"></td>
+          <td style="font-family:var(--mono)">${r.punti||0}</td>
+          <td style="white-space:nowrap"><button class="btn-copy" style="padding:3px 8px" onclick="saveRisRow(${r.id})">💾</button> <button class="btn-copy" style="padding:3px 8px" onclick="deleteRisRow(${r.id})">🗑</button></td>
+        </tr>`;
+      });
+    }
+    h+=`</tbody></table>
+      <p style="font-size:11px;color:var(--text3);margin-top:8px">Posizione vuota = fuori dai primi 3 del club (0 punti). I punti si ricalcolano dalla posizione. Nelle staffette la posizione è quella della squadra e si aggiorna su tutte e 4 le frazioni.</p>`;
+  }
+  h+=`</div>`;
+
+  // Aggiungi risultato
+  const inp='font-size:12px;padding:6px;border:1px solid var(--border);border-radius:6px;width:100%';
+  h+=`<div class="card"><div class="card-title">➕ Aggiungi risultato — ${dayLbl[risDay]}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:end">
+      <div><label style="font-size:11px">Disciplina</label><select id="ris_new_d" style="${inp}">${RIS_ORDER().map(c=>`<option value="${c}">${risLabel(c)}</option>`).join('')}</select></div>
+      <div><label style="font-size:11px">Giocatore</label><select id="ris_new_p" style="${inp}">${allPlayers.map(p=>`<option value="${p.id}">${p.id}</option>`).join('')}</select></div>
+      <div><label style="font-size:11px">Risultato</label><input id="ris_new_r" placeholder="10.471 · 2:14:53.417 · 8.925" style="${inp};font-family:var(--mono)"></div>
+      <div><label style="font-size:11px">Posizione</label><input id="ris_new_pos" type="number" min="1" placeholder="vuota = 0 punti" style="${inp}"></div>
+      <div><label style="font-size:11px">Squadra (staff.)</label><input id="ris_new_sq" type="number" min="1" max="6" style="${inp}"></div>
+      <div><label style="font-size:11px">Frazione (staff.)</label><input id="ris_new_fr" type="number" min="1" max="4" style="${inp}"></div>
+      <div><button class="btn-primary-sm" onclick="addRisRow()">Aggiungi</button></div>
+    </div>
+    <div class="error-msg" id="ris-add-msg" style="margin-top:8px"></div>
+  </div>`;
+  el.innerHTML=h;
+}
+let risApReminder='';
+function copyRisApReminder(){
+  if(!risApReminder) return;
+  navigator.clipboard.writeText(risApReminder).then(()=>alert('Promemoria copiato!'));
+}
+async function saveRisRow(id){
+  const r=risultati.find(x=>x.id===id); if(!r) return;
+  const parsed=risParse(document.getElementById('ris_r_'+id).value, r.disciplina);
+  if(!parsed){ alert('Risultato non valido'); return; }
+  const posRaw=document.getElementById('ris_p_'+id).value;
+  const pos=posRaw?parseInt(posRaw):null;
+  try{
+    await sb(`italy_risultati?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({risultato:parsed.risultato, valore:parsed.valore})});
+    // posizione/punti: per le staffette valgono per tutta la squadra
+    const filter=r.squadra!=null
+      ? `week_id=eq.${r.week_id}&giorno=eq.${r.giorno}&disciplina=eq.${r.disciplina}&squadra=eq.${r.squadra}`
+      : `id=eq.${id}`;
+    await sb(`italy_risultati?${filter}`,{method:'PATCH',body:JSON.stringify({posizione:pos, punti:risPts(pos)})});
+    await renderRisultati();
+  }catch(e){ alert(t('error_save')+e.message); }
+}
+async function deleteRisRow(id){
+  const r=risultati.find(x=>x.id===id); if(!r) return;
+  if(!confirm(`Eliminare ${r.player_id} — ${risLabel(r.disciplina)} (${r.risultato})?`)) return;
+  try{ await sb(`italy_risultati?id=eq.${id}`,{method:'DELETE'}); await renderRisultati(); }
+  catch(e){ alert(t('error_save')+e.message); }
+}
+async function addRisRow(){
+  const msg=document.getElementById('ris-add-msg'); msg.textContent='';
+  const code=document.getElementById('ris_new_d').value;
+  const player=document.getElementById('ris_new_p').value;
+  const parsed=risParse(document.getElementById('ris_new_r').value, code);
+  if(!parsed){ msg.textContent='Risultato non valido (es. 10.471 · 1:54.811 · 8.925)'; return; }
+  const posRaw=document.getElementById('ris_new_pos').value;
+  const pos=posRaw?parseInt(posRaw):null;
+  const isRelay=!!RIS_RELAYS[code];
+  const sq=document.getElementById('ris_new_sq').value, fr=document.getElementById('ris_new_fr').value;
+  if(isRelay && (!sq||!fr)){ msg.textContent='Per le staffette servono squadra e frazione.'; return; }
+  const row={week_id:weekData.id, giorno:risDay, disciplina:code, player_id:player,
+    risultato:parsed.risultato, valore:parsed.valore, posizione:pos, punti:risPts(pos),
+    squadra:isRelay?parseInt(sq):null, frazione:isRelay?parseInt(fr):null};
+  try{
+    await sb('italy_risultati?on_conflict=week_id,giorno,disciplina,player_id',{method:'POST',body:JSON.stringify(row),prefer:'resolution=merge-duplicates,return=representation'});
+    await renderRisultati();
+  }catch(e){ msg.textContent=t('error_save')+e.message; }
 }
 
 // ── GESTIONE ROSTER (admin-only) ──────────────────────────────
@@ -1385,6 +1713,11 @@ function renderOblSummary(){
 }
 
 // ── OBL CHECK: chi ha inserito le obbligatorie della settimana ─
+let oblReminderText='';
+function copyOblReminder(){
+  if(!oblReminderText) return;
+  navigator.clipboard.writeText(oblReminderText).then(()=>alert('Lista copiata!'));
+}
 function renderOblCheck(){
   const bar=document.getElementById('admin-obl-check-bar');
   if(!isAdmin){ if(bar) bar.style.display='none'; return; }
@@ -1412,9 +1745,18 @@ function renderOblCheck(){
     }).join('');
     h+=`</div>`;
 
-    const reminderLines=missing.map(m=>`- ${m.id} (manca: ${m.missingDays.map(d=>dayNames[d]).join(', ')})`).join('\n');
-    const reminderText=`⚠️ Obbligatorie mancanti questa settimana:\n${reminderLines}\n\nInseritele nel tab "Dati CC" appena possibile 🙏`;
-    h+=`<button class="btn-copy" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(reminderText)}')).then(()=>alert('Lista copiata!'))">📋 Copia lista mancanti</button>`;
+    // v1.25: promemoria bilingue IT/EN. ⭐ = tra i 10 più forti del club: sono
+    // quelli le cui obbligatorie spostano di più i piani degli altri.
+    const top=computeTopN(10,players);
+    const dIT={1:'Lun',2:'Mar',3:'Mer',4:'Gio'}, dEN={1:'Mon',2:'Tue',3:'Wed',4:'Thu'};
+    const sorted=[...missing].sort((a,b)=>(top.has(b.id)-top.has(a.id))||a.id.localeCompare(b.id));
+    const reminderLines=sorted.map(m=>`- ${m.id}${top.has(m.id)?' ⭐':''} (${m.missingDays.map(d=>dIT[d]).join(', ')} / ${m.missingDays.map(d=>dEN[d]).join(', ')})`).join('\n');
+    const reminderText=`⚠️ *Obbligatorie mancanti questa settimana / Missing mandatory events this week:*\n${reminderLines}\n\n`+
+      `Inseritele nel tab "Dati CC" appena possibile 🙏 Senza le vostre obbligatorie l'optimizer non sa dove gareggerete e rischia di mandare altri nella stessa gara a 0 punti.\n`+
+      `Please enter them in the "CC Data" tab as soon as possible 🙏 Without your mandatory events the optimizer can't plan around you and may send others to the same event for 0 points.`+
+      (sorted.some(m=>top.has(m.id))?`\n\n⭐ = tra i più forti del club: le vostre contano di più / among the club's strongest: yours matter most`:'');
+    oblReminderText=reminderText; // in variabile: il testo contiene apostrofi, non si può inlineare nell'onclick
+    h+=`<button class="btn-copy" onclick="copyOblReminder()">📋 Copia lista mancanti</button>`;
   }
 
   if(complete.length){
@@ -1510,9 +1852,9 @@ function greedyPass(candidates,obl,libere,pSlots,discState){
       const occ=new Set([...(obl[p.id]||[]),...libere[p.id]]);
       for(const d of DISCS){
         if(occ.has(d)) continue;
-        const r=getRank(p.id,d);if(!r) continue;
+        const r=getPos(p.id,d);if(!r) continue;
         const gain=marginalGain(r,discState[d]);
-        if(gain>bestGain||(gain===bestGain&&bestP&&r<(getRank(bestP,bestD)||99))){
+        if(gain>bestGain||(gain===bestGain&&bestP&&r<(getPos(bestP,bestD)||99))){
           bestGain=gain;bestP=p.id;bestD=d;
         }
       }
@@ -1520,7 +1862,7 @@ function greedyPass(candidates,obl,libere,pSlots,discState){
     if(bestGain<=0||!bestP) break;
     libere[bestP].push(bestD);
     pSlots[bestP]--;
-    discState[bestD].push(getRank(bestP,bestD));
+    discState[bestD].push(getPos(bestP,bestD));
   }
 }
 
@@ -1605,13 +1947,15 @@ function calcola(){
   DISCS.forEach(d=>discState[d]=[]);
   for(const p of players)
     for(const d of(obl[p.id]||[])){
-      const r=getRank(p.id,d);
+      const r=getPos(p.id,d);
       if(r) discState[d].push(r);
     }
 
   const libere={};players.forEach(p=>libere[p.id]=[]);
   const pSlots={};players.forEach(p=>pSlots[p.id]=2);
 
+  // v1.25: tutte le scelte usano getPos() = posizione stimata in classifica
+  // GENERALE (dai risultati reali della settimana), non più il rank di club.
   // Ottimizzazione globale: un unico giro su TUTTI i giocatori insieme,
   // nessuna priorità fissa ai TOP10 — ogni volta si assegna la coppia
   // giocatore-disciplina che porta il guadagno marginale più alto per il
@@ -1624,7 +1968,7 @@ function calcola(){
   // rari casi limite in cui l'ottimizzazione globale non ci arriva da sola
   // (es. nessuno con slot liberi ha un rank valido lì). Anche questi contano
   // punti veri (basta rank ≤30), quindi restano "precisi", non copertura.
-  assignBestAvailable(DISCS,3,players,obl,libere,pSlots,discState,getRank);
+  assignBestAvailable(DISCS,3,players,obl,libere,pSlots,discState,getPos);
 
   // Buffer: porta a 4 le discipline ferme esattamente a 3, usando gli slot
   // rimasti liberi dopo aver esaurito ogni guadagno reale possibile. NON
@@ -1633,7 +1977,7 @@ function calcola(){
   // uno dei 3 titolari.
   const beforeBuffer=new Set();
   for(const p of players) for(const d of (libere[p.id]||[])) beforeBuffer.add(p.id+'|'+d);
-  assignBestAvailable(DISCS.filter(d=>(discState[d]||[]).length===3),4,players,obl,libere,pSlots,discState,getRank);
+  assignBestAvailable(DISCS.filter(d=>(discState[d]||[]).length===3),4,players,obl,libere,pSlots,discState,getPos);
 
   // coverageSet: solo il 4° giocatore "buffer" viene marcato — quello sì,
   // non porta guadagno di punti, è puro cuscinetto di sicurezza.
@@ -1664,7 +2008,7 @@ function buildAltriGuidance(obl,libere,precisiIds,players){
   const entr={};DISCS.forEach(d=>entr[d]=[]);
   for(const p of players){
     const ds=[...(obl[p.id]||[]),...(libere[p.id]||[])];
-    for(const d of ds) entr[d].push(getRank(p.id,d)||99);
+    for(const d of ds) entr[d].push(getPos(p.id,d)||99);
   }
   const AFFOLLATA=5;
   const cand=[],avoid=[];
@@ -1674,7 +2018,7 @@ function buildAltriGuidance(obl,libere,precisiIds,players){
     const el=altri.filter(p=>!(obl[p.id]||[]).includes(d));
     if(!el.length) continue;
     const third=n>=3?[...entr[d]].sort((a,b)=>a-b)[2]:99; // posto libero tra i 3 = punti sicuri
-    const gaps=el.map(p=>(getRank(p.id,d)||30)-third).sort((a,b)=>a-b);
+    const gaps=el.map(p=>(getPos(p.id,d)||30)-third).sort((a,b)=>a-b);
     const med=gaps[Math.floor((gaps.length-1)/2)];
     cand.push({d,score:med+(n>=4?2:0),n}); // a 3 iscritti un 4° fa anche da riserva
   }
@@ -1790,11 +2134,13 @@ function renderMessaggio(obl,libere,discCount,altriGuide,libereCorrette,precisiI
   const dayEN={1:'MONDAY',2:'TUESDAY',3:'WEDNESDAY',4:'THURSDAY'};
   const s100=getSquads('100m');
   const s400=getSquads('400m');
-  const ords=['1st','2nd','3rd','4th'];const keys=['A','B','C','D'];
+  const ords=['1st','2nd','3rd','4th','5th','6th'];const keys=['A','B','C','D','E','F'];
   let staffText='';
-  keys.forEach((k,i)=>{staffText+=`${ords[i]} Relay 4x100: ${(s100[k]||[]).join(' ').toUpperCase()}\n`;});
+  keys.forEach((k,i)=>{if((s100[k]||[]).length) staffText+=`${ords[i]} Relay 4x100: ${(s100[k]||[]).join(' ').toUpperCase()}\n`;});
   staffText+=`\n`;
-  keys.forEach((k,i)=>{staffText+=`${ords[i]} Relay 4x400: ${(s400[k]||[]).join(' ').toUpperCase()}\n`;});
+  keys.forEach((k,i)=>{if((s400[k]||[]).length) staffText+=`${ords[i]} Relay 4x400: ${(s400[k]||[]).join(' ').toUpperCase()}\n`;});
+  const ris100=(s100.R||[]), ris400=(s400.R||[]);
+  if(ris100.length||ris400.length) staffText+=`\n${bi('msg_riserve')}: 4x100 ${ris100.join(' ').toUpperCase()||'—'} · 4x400 ${ris400.join(' ').toUpperCase()||'—'}\n`;
   staffText+=`\n${bi('fifth_sixth')}`;
 
   const players=allPlayers.filter(p=>p.active!==false);
@@ -1808,18 +2154,20 @@ function renderMessaggio(obl,libere,discCount,altriGuide,libereCorrette,precisiI
   const altriText=`${bi('msg_1scelta')}: ${pref1.join(' / ')||'—'}\n${bi('msg_2scelta')}: ${pref2.join(' / ')||'—'}\n${bi('msg_evitare')}: ${avoid.join(' / ')||'—'}`;
   const anyCoverage=[...coverageSet].length>0;
   const covNote=anyCoverage?`\nℹ️ _${I18N.it.msg_note_cov}_\nℹ️ _${I18N.en.msg_note_cov}_`:'';
-  const fullMsg=`*DAY ${currentDay} – ${dayIT[currentDay]} / ${dayEN[currentDay]}*\n\n📌 *${bi('msg_staffette')}:*\n${staffText}\n\n🏃 *${bi('msg_libere_top')}:*\n${topLines}\n\n👥 *${bi('msg_altri')}:*\n${altriText}\n\nℹ️ _${I18N.it.msg_note_top}_\nℹ️ _${I18N.en.msg_note_top}_${covNote}`;
+  const fullMsg=`*DAY ${currentDay} – ${dayIT[currentDay]} / ${dayEN[currentDay]}*\n\n${I18N.it.msg_ap}\n${I18N.en.msg_ap}\n\n📌 *${bi('msg_staffette')}:*\n${staffText}\n\n🏃 *${bi('msg_libere_top')}:*\n${topLines}\n\n👥 *${bi('msg_altri')}:*\n${altriText}\n\nℹ️ _${I18N.it.msg_note_top}_\nℹ️ _${I18N.en.msg_note_top}_${covNote}`;
   currentDraftMsg=fullMsg;
 
   // Staffette table
   let sR100='',sR400='';
   keys.forEach((k,i)=>{
+    if(!(s100[k]||[]).length && !(s400[k]||[]).length) return;
     sR100+=`<tr><td style="color:var(--text3);font-weight:700;width:36px;font-family:var(--mono)">${ords[i].toUpperCase()}</td><td>${(s100[k]||[]).join(' · ').toUpperCase()}</td></tr>`;
     sR400+=`<tr><td style="color:var(--text3);font-weight:700;font-family:var(--mono)">${ords[i].toUpperCase()}</td><td>${(s400[k]||[]).join(' · ').toUpperCase()}</td></tr>`;
   });
 
   let h=`<div class="card">
     <div class="card-title">DAY ${currentDay} — ${dayIT[currentDay]} / ${dayEN[currentDay]}</div>
+    <div class="alert a-success" style="font-size:12px;margin-bottom:12px">${I18N.it.msg_ap}<br>${I18N.en.msg_ap}</div>
     <div class="section-head">📌 ${bi('msg_staffette')}</div>
     <div class="grid2" style="margin-bottom:10px">
       <div><table style="font-size:12px;font-family:var(--mono)"><thead><tr><th colspan="2">4×100m</th></tr></thead><tbody>${sR100}</tbody></table></div>
@@ -1840,9 +2188,9 @@ function renderMessaggio(obl,libere,discCount,altriGuide,libereCorrette,precisiI
     const cov1=isCov(p.id,libs[1])?` <span style="font-size:9px;color:var(--text3)" title="${bi('msg_copertura')}">🔧</span>`:'';
     h+=`<tr><td style="font-weight:600">${p.id}${starBadge}</td>
       <td>${libs[0]?`<span class="badge b-lib">${DL[libs[0]]||libs[0]}</span>${flag0}${cov0}`:'—'}</td>
-      <td>${libs[0]?rPill(p.id,libs[0]):'—'}</td>
+      <td>${libs[0]?rPill(p.id,libs[0])+posHint(p.id,libs[0]):'—'}</td>
       <td>${libs[1]?`<span class="badge b-lib">${DL[libs[1]]||libs[1]}</span>${flag1}${cov1}`:'—'}</td>
-      <td>${libs[1]?rPill(p.id,libs[1]):'—'}</td>
+      <td>${libs[1]?rPill(p.id,libs[1])+posHint(p.id,libs[1]):'—'}</td>
     </tr>`;
   }
   h+=`</tbody></table>`;
@@ -1857,7 +2205,7 @@ function renderMessaggio(obl,libere,discCount,altriGuide,libereCorrette,precisiI
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
       <div><div style="font-size:10px;font-weight:700;color:var(--green);margin-bottom:6px;font-family:var(--mono)">${bi('msg_1scelta').toUpperCase()}</div><div class="disc-wrap">${pref1.map(d=>`<span class="badge b-lib">${d}</span>`).join(' ')||'—'}</div></div>
       <div><div style="font-size:10px;font-weight:700;color:var(--orange);margin-bottom:6px;font-family:var(--mono)">${bi('msg_2scelta').toUpperCase()}</div><div class="disc-wrap">${pref2.map(d=>`<span class="badge b-rif">${d}</span>`).join(' ')||'—'}</div></div>
-      <div><div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;font-family:var(--mono)">${bi('msg_evitare').toUpperCase()}</div><div class="disc-wrap">${avoid.map(d=>`<span class="badge b-gray">${d}</span>`).join(' ')||'—'}</div></div>
+      <div><div style="font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px;font-family:var(--mono)">GIÀ PIENE / ALREADY FULL</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">solo 5 AP · only 5 AP</div><div class="disc-wrap">${avoid.map(d=>`<span class="badge b-gray">${d}</span>`).join(' ')||'—'}</div></div>
     </div>
     <button class="btn-copy" onclick="copyDraftMsg()">${t('copy_msg')}</button>
     <button class="btn-primary-sm" style="margin-left:10px" onclick="publishDraftMsg('${staffMode}${staffBasis==='pb'?'+pb':''}')">
@@ -1970,8 +2318,12 @@ function buildSquads(disc,mode,basis=staffBasis){
     for(let r=0;r<4;r++)for(let j=0;j<3;j++){const idx=r*3+j;if(idx<pool.length)squads[o[r][j]].push(pool[idx].p);}
   }
   const used=new Set([...squads.A,...squads.B,...squads.C,...squads.D]);
-  const free=ranked.filter(x=>!used.has(x.p)).map(x=>x.p);
-  squads.E=free.slice(0,4);squads.F=free.slice(4);
+  // v1.25: in 5ª/6ª squadra entrano tutti, anche chi non ha ancora inserito il
+  // Valore CC (in coda): ogni staffetta corsa vale 5 AP. Oltre i 24 → riserve.
+  const rankedIds=new Set(ranked.map(x=>x.p));
+  const free=[...ranked.filter(x=>!used.has(x.p)).map(x=>x.p),
+              ...players.map(p=>p.id).filter(id=>!rankedIds.has(id)&&!used.has(id))];
+  squads.E=free.slice(0,4);squads.F=free.slice(4,8);squads.R=free.slice(8);
   return squads;
 }
 
